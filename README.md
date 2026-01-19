@@ -125,10 +125,10 @@ windows.bat
 php windows.php
 ```
 
-### 访问
+### 本地启动访问
 
-- 前台：`http://127.0.0.1:8787/`（端口以 `config/server.php` 或实际监听为准）
-- 后台：`http://127.0.0.1:8787/admin/login`
+- 前台：`http://127.0.0.1:8789/`（端口以 `config/server.php` 或实际监听为准）
+- 后台：`http://127.0.0.1:8789/admin/login`
 
 ---
 
