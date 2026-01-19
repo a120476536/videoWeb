@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+
+<link rel="stylesheet" href="/public/ads/ads.css">
+<script src="/public/ads/ads.config.js"></script>
+
+<style>
+
+</style>
+</head>
+
+<body>
+
+<!-- 广告容器，预留位置 -->
+<div id="ad-top" class="ad ad-top"></div>
+<div id="ad-left" class="ad ad-side ad-left"></div>
+<div id="ad-right" class="ad ad-side ad-right"></div>
+<div id="ad-bottom" class="ad ad-bottom"></div>
+
+
+<script>
+function closeAd(type) {
+    const el = document.getElementById('ad-' + type);
+    el && (el.style.display = 'none');
+}
+
+(function init() {
+    if (!window.ADS_CONFIG) return;
+
+    if (!ADS_CONFIG.top.enable) document.getElementById('ad-top').remove();
+    if (!ADS_CONFIG.left.enable) document.getElementById('ad-left').remove();
+    if (!ADS_CONFIG.right.enable) document.getElementById('ad-right').remove();
+    if (!ADS_CONFIG.bottom.enable) document.getElementById('ad-bottom').remove();
+
+    document.getElementById('adTopText') &&
+        (document.getElementById('adTopText').innerText = ADS_CONFIG.top.text);
+
+    document.getElementById('adBottomText') &&
+        (document.getElementById('adBottomText').innerText = ADS_CONFIG.bottom.text);
+})();
+</script>
+
+</body>
+</html>

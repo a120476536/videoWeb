@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" href="/favicon.ico"/>
+    <title>{$pageTitle}</title>
+
+</head>
+<body>
+hello <?=htmlspecialchars($name)?>
+<a href="{$navItem.type_id}" class="nav-item {$navItem.active ? 'active' : ''}">{$navItem.type_name}</a>
+
+{foreach $navItemMore as $navItem}
+<a href="{$navItem.type_id}" class="nav-dropdown-item {$navItem.active ? 'active' : ''}">{$navItem.type_name}</a>
+{/foreach}
+</body>
+</html>

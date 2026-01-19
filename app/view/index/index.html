@@ -1,0 +1,594 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <title>{$systemName|default='影视站'}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+
+        /* 顶部广告 */
+        #ad-top {position: relative; top: 0; background: rgba(255,255,255,0.95); text-align: center; z-index: 9999;}
+        /* 底部悬浮广告 */
+        #ad-bottom {position: fixed; bottom:0; left:0; width:100%; text-align:center; z-index:9999; background: rgba(255,255,255,0.95);}
+        /* 左右悬浮广告 */
+        #ad-left, #ad-right {position: fixed; top:220px; width:100px; z-index:9999;}
+        #ad-left {left:0;}
+        #ad-right {right:0;}
+        /* 视频底部广告 */
+        #ad-video-bottom {text-align:center; margin:20px 0;}
+        
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        /* 头部样式 - 关键修复 */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 0;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            /* 改用 Grid 布局 */
+            grid-template-columns: auto 1fr auto;
+            /* logo | 导航(自适应) | 搜索 */
+            align-items: center;
+            gap: 20px;
+            padding: 0 20px;
+        }
+
+        /* Logo 样式 - 固定宽度 */
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            /* 防止换行 */
+            min-width: fit-content;
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+            color: #764ba2;
+        }
+
+        /* 导航容器 - 居中自适应 */
+        .nav-dropdown {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* 导航居中 */
+            gap: 15px;
+            position: relative;
+            min-width: 0;
+            /* 允许收缩 */
+            flex: 1;
+            /* 占据剩余空间 */
+        }
+
+        .nav-main-items {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: nowrap;
+            /* 不换行 */
+            overflow: hidden;
+            /* 防止溢出 */
+        }
+
+        .nav-item {
+            color: #333;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            white-space: nowrap;
+            flex-shrink: 1;
+            /* 允许收缩 */
+            min-width: 0;
+        }
+
+        .nav-item:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        /* 更多菜单 */
+        .nav-more {
+            position: relative;
+            flex-shrink: 0;
+            /* 不收缩 */
+        }
+
+        .nav-more-btn {
+            color: #333;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .nav-more-btn:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .nav-more-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 10px 0;
+            min-width: 200px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .nav-more:hover .nav-more-dropdown {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .nav-dropdown-item {
+            display: block;
+            color: #333;
+            text-decoration: none;
+            padding: 10px 20px;
+            transition: background 0.3s ease;
+            border-bottom: 1px solid #f0f0f0;
+            white-space: nowrap;
+        }
+
+        .nav-dropdown-item:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .nav-dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .nav-dropdown-item.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        /* 搜索框 - 固定宽度 */
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+            /* 不收缩 */
+            min-width: fit-content;
+        }
+
+        .search-input {
+            width: 280px;
+            padding: 12px 40px 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        /* 推荐区容器 */
+        .recommend-block {
+            margin-bottom: 40px;
+        }
+
+        .recommend-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            padding-left: 5px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .recommend-title::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, #fff, transparent);
+            border-radius: 2px;
+        }
+
+        /* 响应式网格布局 */
+        .recommend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
+            padding: 5px;
+        }
+
+        /* 单个卡片 */
+        .vod-card {
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .vod-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+        }
+
+        .vod-pic {
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            background: #f0f0f0;
+        }
+
+        .vod-pic::before {
+            content: '';
+            display: block;
+            padding-top: 140%;
+            /* 海报比例 7:10 */
+        }
+
+        .vod-pic img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .vod-card:hover .vod-pic img {
+            transform: scale(1.08);
+        }
+
+        .vod-remarks {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            padding: 4px 10px;
+            font-size: 12px;
+            border-radius: 12px;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .vod-name {
+            padding: 12px 10px;
+            font-size: 14px;
+            text-align: center;
+            color: #333;
+            font-weight: 500;
+            line-height: 1.4;
+            /* 单行显示，超出省略 */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 1200px) {
+            .recommend-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 16px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .recommend-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 12px;
+            }
+
+            .vod-name {
+                font-size: 13px;
+                padding: 10px 8px;
+            }
+
+            .recommend-title {
+                font-size: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .recommend-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 10px;
+            }
+
+            .vod-name {
+                font-size: 12px;
+                padding: 8px 6px;
+            }
+
+            .vod-remarks {
+                font-size: 11px;
+                padding: 3px 8px;
+            }
+
+            .recommend-title {
+                font-size: 18px;
+            }
+        }
+
+        /* 演示内容区域 */
+        .demo-content {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .demo-title {
+            font-size: 24px;
+            color: #667eea;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+            color: #666;
+        }
+
+        .feature-list li:before {
+            content: "✅ ";
+            color: #667eea;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-container">
+            <!-- Logo 区域 -->
+            <a href="{$systemLogo|default='/'}" class="logo">{$systemName|default='影视站'}</a>
+
+            <!-- 导航区域 -->
+            <nav class="nav-dropdown">
+                <div class="nav-main-items">
+                    <a href="/index/index" class="nav-item {$navItem.active ? 'active' : ''}">
+                        首页
+                    </a>
+                    {foreach $navItemShow as $navItem}
+                    <a href="/index/nav?tid={$navItem.type_id}" class="nav-item {$navItem.active ? 'active' : ''}">
+                        {$navItem.type_name}
+                    </a>
+                    {/foreach}
+                </div>
+
+                <!--            {if !empty($navItemMore)}-->
+                <div class="nav-more">
+                    <a class="nav-more-btn">更多 ▼</a>
+                    <div class="nav-more-dropdown">
+                        {foreach $navItemMore as $navItem}
+                        <a href="/index/nav?tid={$navItem.type_id}"
+                            class="nav-dropdown-item {$navItem.active ? 'active' : ''}">
+                            {$navItem.type_name} (ID: {$navItem.type_id})
+                        </a>
+                        {/foreach}
+                    </div>
+                </div>
+                <!--            {/if}-->
+            </nav>
+
+            <!-- 搜索区域 -->
+            <div class="search-box">
+                <form method="GET" action="/index/search" style="display: flex; align-items: center;">
+                    <input type="text" name="keyword" class="search-input" placeholder="搜索电影、电视剧..."
+                        value="{$currentKeyword|default=''}">
+                    <button type="submit" class="search-btn">🔍</button>
+                </form>
+            </div>
+        </div>
+    </header>
+<!-- 顶部广告（导航下方） -->
+<div id="ad-top"></div>
+    <!-- 左右悬浮广告 -->
+    <div id="ad-left"></div>
+    <div id="ad-right"></div>
+    <!-- 演示内容 -->
+    <div class="demo-content">
+
+        {foreach $recommendList as $block}
+        <div class="recommend-block">
+
+            <h2 class="recommend-title">{$block.type_name}</h2>
+
+            <div class="recommend-grid">
+                {foreach $block.vlist as $vod}
+                <div class="vod-card" onclick="playVideo('{$vod.vod_name}')">
+                    <div class="vod-pic">
+                        <img src="{$vod.vod_pic}" alt="{$vod.vod_name}">
+                        {if !empty($vod.vod_remarks)}
+                        <span class="vod-remarks">{$vod.vod_remarks}</span>
+                        {/if}
+                    </div>
+                    <div class="vod-name">{$vod.vod_name}</div>
+                </div>
+                {/foreach}
+            </div>
+
+        </div>
+        {/foreach}
+
+    </div>
+
+    <!-- 视频底部广告 -->
+    <div id="ad-video-bottom"></div>
+
+    <!-- 底部悬浮广告 -->
+    <div id="ad-bottom"></div>
+    <script>
+        function playVideo(vod_name) {
+            // 这里可以跳转到播放页面或者做其他处理
+            // alert(`准备播放视频ID: ${vod_name}`);
+            // // 实际项目中可以这样跳转:
+            // // window.location.href = '/play/' + videoId + '?channel=' + encodeURIComponent(channelName);
+            // window.location.href = '/index/search?vod_name='+vod_name;
+
+            console.log('准备跳转，vod_name:', vod_name);
+            console.log('跳转URL:', '/index/search?keyword=' + encodeURIComponent(vod_name));
+            window.location.href = '/index/search?keyword=' + encodeURIComponent(vod_name);
+        }
+        // 简单的交互效果
+        document.addEventListener('DOMContentLoaded', function () {
+            // 搜索框焦点效果
+            const searchInput = document.querySelector('.search-input');
+            if (searchInput) {
+                searchInput.addEventListener('focus', function () {
+                    this.parentElement.style.transform = 'scale(1.02)';
+                });
+
+                searchInput.addEventListener('blur', function () {
+                    this.parentElement.style.transform = 'scale(1)';
+                });
+            }
+
+            // 导航项点击效果
+            const navItems = document.querySelectorAll('.nav-item, .nav-dropdown-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', function (e) {
+                    // 移除所有active类
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    // 添加当前active类
+                    this.classList.add('active');
+                });
+            });
+        });
+
+        // 动态加载广告函数
+function insertAd(containerId, content){
+    const container = document.getElementById(containerId);
+    if(!container || !content) return;
+    content = content.trim();
+
+    // script 标签处理
+    if(content.startsWith('<script')){
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = content;
+        const scriptTag = tempDiv.querySelector('script');
+        if(scriptTag){
+            const newScript = document.createElement('script');
+            // 复制属性
+            for(let attr of scriptTag.attributes){
+                newScript.setAttribute(attr.name, attr.value);
+            }
+            // 复制内联内容
+            if(scriptTag.innerHTML){
+                newScript.text = scriptTag.innerHTML;
+            }
+            container.appendChild(newScript);
+        }
+    } else {
+        container.innerHTML = content;
+    }
+}
+
+// 页面加载完后拉取 ads.json
+document.addEventListener('DOMContentLoaded', function(){
+    fetch('/ads.json')
+        .then(res=>res.json())
+        .then(ads=>{
+            insertAd('ad-top', ads.top);
+            insertAd('ad-bottom', ads.bottom);
+            insertAd('ad-left', ads.left);
+            insertAd('ad-right', ads.right);
+            insertAd('ad-video-bottom', ads.video_bottom);
+        })
+        .catch(err=>console.error('广告加载失败', err));
+});
+    </script>
+</body>
+
+</html>

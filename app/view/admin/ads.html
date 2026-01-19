@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>广告配置</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:"Microsoft YaHei",Arial,sans-serif;background:#f4f6f8;}
+header{height:60px;background:#007bff;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:0 30px;}
+header .logo{font-weight:bold;}
+header .user a{color:#fff;text-decoration:underline;}
+nav{position:fixed;top:60px;left:0;width:200px;bottom:0;background:#2c3e50;padding-top:20px;}
+nav a{display:block;color:#ecf0f1;padding:12px 20px;text-decoration:none;transition:0.2s;}
+nav a:hover, nav a.active{background:#34495e;border-left:4px solid #007bff;}
+main{margin-left:200px;padding:30px;}
+form{background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.05);max-width:700px;}
+label{display:block;margin-top:15px;font-weight:bold;}
+textarea{width:100%;height:80px;padding:10px;border-radius:4px;border:1px solid #ccc;box-sizing:border-box;font-family:monospace;}
+button{margin-top:20px;padding:10px 20px;background:#007bff;color:#fff;border:none;border-radius:4px;cursor:pointer;}
+button:hover{background:#0056b3;}
+footer{text-align:center;padding:15px;color:#999;font-size:13px;margin-top:40px;}
+@media(max-width:768px){nav{width:60px;}main{margin-left:60px;}}
+</style>
+</head>
+<body>
+<header>
+    <div class="logo">后台管理系统</div>
+    <div class="user">管理员 | <a href="/admin/logout">退出登录</a></div>
+</header>
+
+<nav>
+    <a href="/admin/dashboard" class="<?= ($currentPath=='/admin/dashboard')?'active':'' ?>">仪表盘</a>
+    <a href="/admin/ads" class="<?= ($currentPath=='/admin/ads')?'active':'' ?>">广告配置</a>
+</nav>
+
+<main>
+<h2>广告配置</h2>
+<form method="post" action="/admin/ads">
+    <label>顶部悬浮广告（支持 HTML / script）</label>
+    <textarea name="top"><?= htmlspecialchars($ads['top'] ?? '') ?></textarea>
+
+    <label>底部悬浮广告（支持 HTML / script）</label>
+    <textarea name="bottom"><?= htmlspecialchars($ads['bottom'] ?? '') ?></textarea>
+
+    <label>左侧悬浮广告（支持 HTML / script）</label>
+    <textarea name="left"><?= htmlspecialchars($ads['left'] ?? '') ?></textarea>
+
+    <label>右侧悬浮广告（支持 HTML / script）</label>
+    <textarea name="right"><?= htmlspecialchars($ads['right'] ?? '') ?></textarea>
+
+    <label>视频播放器底部广告（支持 HTML / script）</label>
+    <textarea name="video_bottom"><?= htmlspecialchars($ads['video_bottom'] ?? '') ?></textarea>
+
+    <button type="submit">保存配置</button>
+</form>
+</main>
+
+<footer>
+&copy; 2026 后台管理系统
+</footer>
+</body>
+</html>

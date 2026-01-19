@@ -1,0 +1,359 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>{$title|default='搜索页面'}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+    font-family:"Microsoft YaHei",Arial;
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    min-height:100vh;
+}
+.header{
+    background:rgba(255,255,255,.95);
+    padding:15px;
+    box-shadow:0 2px 12px rgba(0,0,0,.1);
+    position:sticky;
+    top:0;
+    z-index:10;
+}
+.header-inner{
+    max-width:1200px;
+    margin:auto;
+    display:flex;
+    align-items:center;
+}
+.logo{
+    font-size:26px;
+    font-weight:bold;
+    color:#667eea;
+    text-decoration:none;
+}
+.search-box{
+    margin-left:auto;
+    position:relative;
+}
+.search-input{
+    width:300px;
+    padding:10px 38px 10px 14px;
+    border-radius:20px;
+    border:2px solid #ddd;
+}
+.search-btn{
+    position:absolute;
+    right:6px;
+    top:6px;
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    border:none;
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    color:#fff;
+    cursor:pointer;
+}
+
+.main{
+    max-width:1400px;
+    margin:20px auto;
+    padding:0 20px;
+}
+
+.search-stats{
+    background:rgba(255,255,255,.9);
+    border-radius:12px;
+    padding:10px;
+    display:flex;
+    justify-content:center;
+    gap:20px;
+    font-size:13px;
+    margin-bottom:15px;
+}
+.search-stats b{color:#667eea}
+
+.search-layout{
+    display:grid;
+    grid-template-columns:220px 1fr;
+    gap:20px;
+}
+
+.channel-list{
+    background:rgba(255,255,255,.9);
+    border-radius:12px;
+    padding:10px;
+    min-height:300px;
+}
+
+.channel-item{
+    padding:10px 12px;
+    border-radius:8px;
+    margin-bottom:6px;
+    cursor:pointer;
+    font-size:14px;
+}
+.channel-item.active{
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    color:#fff;
+}
+
+.channel-content{min-height:300px}
+
+.video-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+    gap:20px;
+}
+.video-card{
+    background:#fff;
+    border-radius:12px;
+    overflow:hidden;
+    box-shadow:0 4px 12px rgba(0,0,0,.1);
+}
+.card-image{
+    width:100%;
+    height:170px;
+    object-fit:cover;
+}
+.card-content{padding:14px}
+.card-title{font-weight:bold;margin-bottom:6px}
+.card-info{font-size:12px;color:#666;margin-bottom:8px}
+.card-footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.play-btn{
+    background:#ff6b6b;
+    border:none;
+    color:#fff;
+    padding:6px 12px;
+    border-radius:4px;
+    cursor:pointer;
+}
+.no-results{
+    text-align:center;
+    color:#666;
+    padding:40px;
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+<div class="header-inner">
+<a href="/" class="logo">{$systemName|default='影视站'}</a>
+<form method="get" action="/index/search" class="search-box">
+<input class="search-input" name="keyword" value="{$keyword}" required placeholder="搜索影视…">
+<button class="search-btn">🔍</button>
+</form>
+</div>
+</header>
+
+<main class="main">
+
+{if !empty($keyword)}
+<div class="search-stats">
+<span>搜索渠道 <b id="totalChannels">0</b></span>
+<span>成功 <b id="successChannels">0</b></span>
+<span>结果 <b id="totalResults">0</b></span>
+<span>耗时 <b id="searchTime">0</b>s</span>
+</div>
+
+<div class="search-layout">
+<aside class="channel-list" id="channelList"></aside>
+<section class="channel-content" id="channelContent"></section>
+</div>
+{/if}
+
+</main>
+
+<script>
+let searchStartTime = Date.now();
+let totalChannels=0, successChannels=0, totalResults=0;
+
+let channelResultMap = {};
+let channelShownSet = new Set();
+let firstActiveSet = false;
+
+// 临时存储视频对象，避免 JSON 转义问题
+window._videoDataStore = {};
+
+const keyword = {$keyword|json_encode|raw};
+const channels = {$channels|json_encode|raw};
+
+if(keyword){
+    startSearch();
+}
+
+function startSearch(){
+    searchStartTime = Date.now();
+    channelResultMap = {};
+    channelShownSet.clear();
+    firstActiveSet = false;
+
+    document.getElementById('channelList').innerHTML = '';
+    document.getElementById('channelContent').innerHTML = '';
+
+    const enabled = channels.filter(c=>c.channel_status==='1');
+    totalChannels = enabled.length;
+    successChannels = 0;
+    totalResults = 0;
+    updateStats();
+
+    concurrentSearch(enabled, 3);
+}
+
+/* 并发搜索 */
+function concurrentSearch(list, limit){
+    let index = 0;
+    let running = 0;
+
+    function runNext(){
+        while (running < limit && index < list.length){
+            const channel = list[index++];
+            running++;
+
+            searchChannel(channel, () => {
+                running--;
+                runNext();   
+            });
+        }
+    }
+    runNext();
+}
+
+function searchChannel(channel, done){
+    fetch('/index/proxy?url='+encodeURIComponent(
+        channel.channel_url+'?ac=detail&wd='+keyword
+    ))
+    .then(r=>r.json())
+    .then(d=>{
+        if(d.list && d.list.length){
+            channelResultMap[channel.channel_id] = d;
+
+            successChannels++;
+            totalResults += d.list.length;
+
+            appendChannel(channel);
+
+            if(!firstActiveSet){
+                firstActiveSet = true;
+                showChannel(channel.channel_id);
+            }
+        }
+        updateStats();
+        done();
+    })
+    .catch(()=>{
+        done();
+    });
+}
+
+function appendChannel(channel){
+    if(channelShownSet.has(channel.channel_id)) return;
+    channelShownSet.add(channel.channel_id);
+
+    const div = document.createElement('div');
+    div.className = 'channel-item';
+    div.id = 'tab-'+channel.channel_id;
+    div.innerText = channel.channel_name;
+    div.onclick = ()=>showChannel(channel.channel_id);
+
+    document.getElementById('channelList').appendChild(div);
+}
+
+function showChannel(id){
+    document.querySelectorAll('.channel-item')
+        .forEach(i=>i.classList.remove('active'));
+
+    document.getElementById('tab-'+id)?.classList.add('active');
+
+    const data = channelResultMap[id];
+    const box = document.getElementById('channelContent');
+
+    if(!data || !data.list){
+        box.innerHTML = '<div class="no-results">暂无结果</div>';
+        return;
+    }
+
+    let html='<div class="video-grid">';
+    data.list.forEach((v,index)=>{
+        const channelInfo = channels.find(c=>c.channel_id===id);
+        const channelName = channelInfo?.channel_name || '未知频道';
+        const channelUrl = channelInfo?.channel_url || '';
+
+        // 生成唯一 key
+        const key = `${id}_${index}_${Date.now()}`;
+        window._videoDataStore[key] = {video:v, channelName, channelUrl};
+
+        html+=`
+        <div class="video-card">
+            <img class="card-image" src="${v.vod_pic||'https://via.placeholder.com/300x200?text=No+Image'}" 
+                 onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
+            <div class="card-content">
+                <div class="card-title">${v.vod_name}</div>
+                <div class="card-info">${v.vod_year||''} ${v.vod_class||''}</div>
+                <div class="card-footer">
+                    <span>${v.vod_remarks||''}</span>
+                    <button class="play-btn" data-key="${key}">播放</button>
+                </div>
+            </div>
+        </div>`;
+    });
+    html+='</div>';
+    box.innerHTML = html;
+}
+
+// 播放事件委托
+document.getElementById('channelContent').addEventListener('click', function(e){
+    if(e.target.classList.contains('play-btn')){
+        const key = e.target.dataset.key;
+        const info = window._videoDataStore[key];
+        if(info){
+            playVideoWithData(JSON.stringify(info.video), info.channelName, info.channelUrl);
+        } else {
+            alert('视频数据未找到');
+        }
+    }
+});
+
+function playVideoWithData(videoDataJson, channelName, channelUrl) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/index/video';
+    form.style.display = 'none';
+
+    const videoDataInput = document.createElement('input');
+    videoDataInput.type = 'hidden';
+    videoDataInput.name = 'videoData';
+    videoDataInput.value = videoDataJson;
+    form.appendChild(videoDataInput);
+
+    const channelNameInput = document.createElement('input');
+    channelNameInput.type = 'hidden';
+    channelNameInput.name = 'channelName';
+    channelNameInput.value = channelName;
+    form.appendChild(channelNameInput);
+
+    const channelUrlInput = document.createElement('input');
+    channelUrlInput.type = 'hidden';
+    channelUrlInput.name = 'channelUrl';
+    channelUrlInput.value = channelUrl;
+    form.appendChild(channelUrlInput);
+
+    document.body.appendChild(form);
+    form.submit();
+}
+
+function updateStats(){
+    document.getElementById('totalChannels').innerText = totalChannels;
+    document.getElementById('successChannels').innerText = successChannels;
+    document.getElementById('totalResults').innerText = totalResults;
+    document.getElementById('searchTime').innerText =
+        ((Date.now()-searchStartTime)/1000).toFixed(1);
+}
+</script>
+
+</body>
+</html>
