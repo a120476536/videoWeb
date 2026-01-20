@@ -7,7 +7,7 @@
 ![首页](./videoWeb/main.png)
 ![TAB](./videoWeb/tab.png)
 ![TAB](./videoWeb/search.png)
-![TAB](./videoWeb/video.png)
+![TAB](./videoWeb/video.jpg)
 ## 技术栈
 
 | 类型 | 技术 |
