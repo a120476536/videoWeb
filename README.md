@@ -5,7 +5,9 @@
 ---
 ### 基础效果演示
 ![首页](./videoWeb/main.png)
-
+![TAB](./videoWeb/tab.png)
+![TAB](./videoWeb/search.png)
+![TAB](./videoWeb/video.png)
 ## 技术栈
 
 | 类型 | 技术 |
