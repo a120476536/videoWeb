@@ -131,7 +131,7 @@ php windows.php
 
 ### 本地启动访问
 
-- 前台：`http://127.0.0.1:8789/`（端口以 `config/server.php` 或实际监听为准）
+- 前台：`http://127.0.0.1:8789/`（端口以 `config/process.php` 中实际监听端口为准）
 - 后台：`http://127.0.0.1:8789/admin/login`
 
 ---
