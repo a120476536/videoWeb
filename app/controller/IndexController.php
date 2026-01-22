@@ -94,6 +94,24 @@ class IndexController
     }
 
     /**
+     * 读取 runtime 目录下的 ads.json 并返回
+     */
+    public function getAds(Request $request)
+    {
+        $adsFile = runtime_path() . '/ads.json';
+        $ads = file_exists($adsFile)
+            ? json_decode(file_get_contents($adsFile), true)
+            : [];
+            
+        // 再次确保输出的是原始 HTML
+        foreach ($ads as $key => $value) {
+            $ads[$key] = htmlspecialchars_decode($value);
+        }
+        
+        return json($ads);
+    }
+
+    /**
      * 播放器顶部广告位配置（由 IndexController 统一控制）
      * 修改 enabled 可开关广告位；修改 html 可替换为你的广告代码（图片链接、百度/Google 等脚本）。
      * @return array {enabled: bool, html: string}

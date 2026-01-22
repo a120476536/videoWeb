@@ -2,6 +2,7 @@
 namespace app\controller;
 
 use support\Request;
+use common\VideoLogUtils;
 
 class AdminController
 {
@@ -39,8 +40,9 @@ class AdminController
     public function adsPage(Request $request)
     {
         $this->checkLogin($request);
-        $ads = file_exists(runtime_path() . '/ads.json')
-            ? json_decode(file_get_contents(runtime_path() . '/ads.json'), true)
+        $adsFile = runtime_path() . '/ads.json';
+        $ads = file_exists($adsFile)
+            ? json_decode(file_get_contents($adsFile), true)
             : [];
         return view('admin/ads', ['ads' => $ads, 'currentPath' => $request->path()]);
     }
@@ -50,14 +52,39 @@ class AdminController
     {
         $this->checkLogin($request);
 
+        // 获取参数并进行 HTML 实体解码，防止被转义
+        $top = htmlspecialchars_decode($request->post('top', ''));
+        $bottom = htmlspecialchars_decode($request->post('bottom', ''));
+        $left = htmlspecialchars_decode($request->post('left', ''));
+        $right = htmlspecialchars_decode($request->post('right', ''));
+        $video_top = htmlspecialchars_decode($request->post('video_top', ''));
+        $video_bottom = htmlspecialchars_decode($request->post('video_bottom', ''));
+
         $ads = [
-            'top' => $request->post('top', ''),
-            'bottom' => $request->post('bottom', ''),
-            'left' => $request->post('left', ''),
-            'right' => $request->post('right', ''),
-            'video_bottom' => $request->post('video_bottom', '')
+            'top' => $top,
+            'bottom' => $bottom,
+            'left' => $left,
+            'right' => $right,
+            'video_top' => $video_top,
+            'video_bottom' => $video_bottom
         ];
-        file_put_contents(runtime_path() . '/ads.json', json_encode($ads, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        
+        // 使用 runtime_path 确保路径正确
+        $adsFile = runtime_path() . '/ads.json';
+        
+        // 记录日志
+        VideoLogUtils::info([
+            'action' => 'saveAds',
+            'file' => $adsFile,
+            'data' => $ads
+        ], 'admin_ads');
+
+        $result = file_put_contents($adsFile, json_encode($ads, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        
+        if ($result === false) {
+            VideoLogUtils::warning("Failed to write ads to $adsFile", 'admin_ads');
+        }
+
         return redirect('/admin/ads');
     }
 

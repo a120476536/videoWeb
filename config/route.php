@@ -34,5 +34,8 @@ Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
 Route::get('/admin/ads', [AdminController::class, 'adsPage']);
 Route::post('/admin/ads', [AdminController::class, 'saveAds']);
 
+// 前端读取广告
+Route::get('/ads.json', [app\controller\IndexController::class, 'getAds']);
+
 // 登出
 Route::get('/admin/logout', [AdminController::class, 'logout']);

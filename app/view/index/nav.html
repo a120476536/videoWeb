@@ -116,52 +116,11 @@
     <!-- 底部悬浮广告 -->
     <div id="ad-bottom"></div>
 
+<script src="/ads/ads.js"></script>
 <script>
 function playVideo(vod_name){
     window.location.href = '/index/search?keyword='+encodeURIComponent(vod_name);
 }
-
-// 动态加载广告函数
-function insertAd(containerId, content){
-    const container = document.getElementById(containerId);
-    if(!container || !content) return;
-    content = content.trim();
-
-    // script 标签处理
-    if(content.startsWith('<script')){
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = content;
-        const scriptTag = tempDiv.querySelector('script');
-        if(scriptTag){
-            const newScript = document.createElement('script');
-            // 复制属性
-            for(let attr of scriptTag.attributes){
-                newScript.setAttribute(attr.name, attr.value);
-            }
-            // 复制内联内容
-            if(scriptTag.innerHTML){
-                newScript.text = scriptTag.innerHTML;
-            }
-            container.appendChild(newScript);
-        }
-    } else {
-        container.innerHTML = content;
-    }
-}
-
-// 页面加载完后拉取 ads.json
-document.addEventListener('DOMContentLoaded', function(){
-    fetch('/ads.json')
-        .then(res=>res.json())
-        .then(ads=>{
-            insertAd('ad-top', ads.top);
-            insertAd('ad-bottom', ads.bottom);
-            insertAd('ad-left', ads.left);
-            insertAd('ad-right', ads.right);
-            insertAd('ad-video-bottom', ads.video_bottom);
-        })
-        .catch(err=>console.error('广告加载失败', err));
-});
 </script>
 
 </body>
