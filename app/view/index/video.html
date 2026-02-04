@@ -17,6 +17,7 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/hls.js@latest" as="script">
+    <link rel="stylesheet" href="/ads/ads.css">
 
     <style>
         * {
@@ -92,69 +93,16 @@
         }
 
         /* 播放器顶部广告区域 */
-        #ad-video-top {
+        .player-ad-banner {
             width: 100%;
+            min-height: 90px;
+            max-height: 120px;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             border-bottom: 1px solid #333;
             overflow: hidden;
-            position: relative; /* 确保关闭按钮绝对定位 */
-        }
-        
-        #ad-video-top:empty {
-            display: none;
-        }
-
-        /* 广告关闭按钮样式 */
-        .ad-close-btn {
-            position: absolute;
-            top: 5px;
-            right: 10px;
-            width: 24px;
-            height: 24px;
-            line-height: 22px;
-            text-align: center;
-            background: rgba(0, 0, 0, 0.6);
-            color: #fff;
-            cursor: pointer;
-            font-size: 20px;
-            border-radius: 50%;
-            z-index: 100;
-            user-select: none;
-            transition: background 0.3s;
-        }
-        .ad-close-btn:hover {
-            background: rgba(255, 69, 58, 0.8); /* 悬停变红 */
-        }
-
-        /* 页面级广告位样式 */
-        #ad-top { 
-            margin: 10px 0 20px 0; 
-            text-align: center; 
-            min-height: 50px; 
-        }
-        #ad-left { 
-            position: fixed; 
-            left: 20px; 
-            top: 50%; 
-            transform: translateY(-50%); 
-            z-index: 100; 
-            max-width: 200px; 
-            word-wrap: break-word; 
-        }
-        #ad-right { 
-            position: fixed; 
-            right: 20px; 
-            top: 50%; 
-            transform: translateY(-50%); 
-            z-index: 100; 
-            max-width: 200px; 
-            word-wrap: break-word; 
-        }
-        @media (max-width: 1200px) { 
-            #ad-left, #ad-right { display: none !important; } 
         }
 
         .player-ad-banner-inner {
@@ -765,20 +713,17 @@
 
 <!-- 主要内容 -->
 <main class="main-content">
-    <!-- 顶部广告 -->
-    <div id="ad-top"></div>
-
     <!-- 调试信息区域 -->
     <div id="debugInfo" class="debug-info">
         <h4>调试信息:</h4>
         <div id="debugContent"></div>
     </div>
 
+    <!-- 播放器顶部广告（后台配置） -->
+    <div id="ad-video-top"></div>
+
     <!-- 播放器区域 -->
     <div class="player-container">
-        <!-- 播放器顶部广告展示区域 -->
-        <div id="ad-video-top"></div>
-        
         <div class="video-wrapper">
             <!-- 视频播放器 -->
             <video id="hlsPlayer" 
@@ -835,7 +780,7 @@
         </div>
     </div>
 
-    <!-- 视频底部广告 -->
+    <!-- 播放器底部广告（后台配置） -->
     <div id="ad-video-bottom"></div>
 
     <!-- 视频信息 -->
@@ -873,14 +818,8 @@
             <!-- 推荐内容将通过JavaScript动态生成 -->
         </div>
     </div>
-    
-    <!-- 底部广告 -->
-    <div id="ad-bottom"></div>
 </main>
 
-<!-- 悬浮广告容器 -->
-<div id="ad-left"></div>
-<div id="ad-right"></div>
 <script src="/ads/ads.js"></script>
 
 <!-- 引入HLS.js库 -->
@@ -976,6 +915,7 @@
 
             const episodeParts = urlString.split('#');
             const episodes = [];
+            let isM3U8Source = false;
 
             episodeParts.forEach(part => {
                 part = part.trim();
@@ -983,6 +923,10 @@
 
                 const [episodeName, episodeUrl] = part.split('$', 2);
                 if (episodeName && episodeUrl) {
+                    if (!isM3U8Source) {
+                        const lowerUrl = episodeUrl.toLowerCase();
+                        isM3U8Source = lowerUrl.includes('.m3u8') || lowerUrl.includes('m3u8');
+                    }
                     episodes.push({
                         name: episodeName.trim(),
                         url: episodeUrl.trim()
@@ -990,12 +934,14 @@
                 }
             });
 
-            if (episodes.length > 0) {
+            if (episodes.length > 0 && isM3U8Source) {
                 playSources.push({
                     name: sourceName,
                     episodes: episodes
                 });
                 debugLog(`播放源 ${sourceName} 解析完成，共 ${episodes.length} 集`);
+            } else if (episodes.length > 0 && !isM3U8Source) {
+                debugLog(`播放源 ${sourceName} 非M3U8，已过滤`);
             }
         }
 
@@ -1143,8 +1089,11 @@
         // 显示初始加载状态
         showStatusIndicator('加载中...');
 
-        // 检查浏览器是否原生支持HLS
-        if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
+        // 仅在 Safari/iOS 使用原生 HLS，避免 Chrome/Edge 误判导致 NotSupportedError
+        const ua = navigator.userAgent || '';
+        const isIOS = /iPad|iPhone|iPod/.test(ua);
+        const isSafari = /Safari/.test(ua) && !/Chrome|Chromium|Edg/.test(ua);
+        if (isIOS || isSafari) {
             debugLog('使用原生HLS支持');
             
             videoPlayer.src = videoUrl;
@@ -1161,36 +1110,38 @@
             hls = new Hls({
                 enableWorker: true,
                 debug: false,
-                maxBufferLength: 30, // 增加缓冲区大小，减少卡顿
-                maxMaxBufferLength: 60,
-                maxBufferSize: 60 * 1000 * 1000, // 60MB缓冲区
+                maxBufferLength: 60, // 更大的前向缓冲，减少卡顿
+                maxMaxBufferLength: 120,
+                maxBufferSize: 120 * 1000 * 1000, // 120MB缓冲区
+                backBufferLength: 60,
                 maxBufferHole: 0.5,
                 maxFragLookUpTolerance: 0.2,
                 liveSyncDurationCount: 3,
                 liveMaxLatencyDurationCount: 10,
                 enableSoftwareAES: true,
-                manifestLoadingTimeOut: 15000, // 增加超时时间
+                manifestLoadingTimeOut: 20000, // 增加超时时间
                 manifestLoadingMaxRetry: 5, // 增加重试次数
                 manifestLoadingRetryDelay: 1000,
                 manifestLoadingMaxRetryTimeout: 30000,
-                levelLoadingTimeOut: 15000,
+                levelLoadingTimeOut: 20000,
                 levelLoadingMaxRetry: 5,
                 levelLoadingRetryDelay: 1000,
                 levelLoadingMaxRetryTimeout: 30000,
-                fragLoadingTimeOut: 20000,
-                fragLoadingMaxRetry: 8, // 增加片段重试次数
+                fragLoadingTimeOut: 30000,
+                fragLoadingMaxRetry: 10, // 增加片段重试次数
                 fragLoadingRetryDelay: 1000,
                 fragLoadingMaxRetryTimeout: 60000,
                 startFragPrefetch: true,
                 testBandwidth: true,
                 autoStartLoad: true,
                 startPosition: 0,
+                capLevelToPlayerSize: true,
                 // 添加关键配置：自动恢复
                 abrEwmaDefaultEstimate: 500000,
                 abrBandWidthFactor: 0.95,
                 abrBandWidthUpFactor: 0.7,
-                maxStarvationDelay: 4,
-                maxLoadingDelay: 4
+                maxStarvationDelay: 6,
+                maxLoadingDelay: 6
             });
 
             // 绑定HLS实例到video元素

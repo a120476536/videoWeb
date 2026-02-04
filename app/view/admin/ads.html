@@ -5,21 +5,34 @@
 <title>广告配置</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:"Microsoft YaHei",Arial,sans-serif;background:#f4f6f8;}
-header{height:60px;background:#007bff;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:0 30px;}
-header .logo{font-weight:bold;}
-header .user a{color:#fff;text-decoration:underline;}
-nav{position:fixed;top:60px;left:0;width:200px;bottom:0;background:#2c3e50;padding-top:20px;}
-nav a{display:block;color:#ecf0f1;padding:12px 20px;text-decoration:none;transition:0.2s;}
-nav a:hover, nav a.active{background:#34495e;border-left:4px solid #007bff;}
-main{margin-left:200px;padding:30px;}
-form{background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.05);max-width:700px;}
-label{display:block;margin-top:15px;font-weight:bold;}
-textarea{width:100%;height:80px;padding:10px;border-radius:4px;border:1px solid #ccc;box-sizing:border-box;font-family:monospace;}
-button{margin-top:20px;padding:10px 20px;background:#007bff;color:#fff;border:none;border-radius:4px;cursor:pointer;}
-button:hover{background:#0056b3;}
-footer{text-align:center;padding:15px;color:#999;font-size:13px;margin-top:40px;}
-@media(max-width:768px){nav{width:60px;}main{margin-left:60px;}}
+body{font-family:"Microsoft YaHei",Arial,sans-serif;background:#f4f6f8;color:#1f2a37;}
+header{height:64px;background:#0f172a;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:0 26px;}
+header .logo{font-weight:700;letter-spacing:.5px;}
+header .user a{color:#e2e8f0;text-decoration:none;border-bottom:1px solid rgba(226,232,240,.4);}
+nav{position:fixed;top:64px;left:0;width:220px;bottom:0;background:#111827;padding-top:14px;}
+nav a{display:block;color:#cbd5e1;padding:12px 20px;text-decoration:none;transition:0.2s;}
+nav a:hover, nav a.active{background:#1f2937;border-left:4px solid #22d3ee;color:#fff;}
+main{margin-left:220px;padding:28px;}
+.page-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.page-title h2{font-size:20px;}
+.tips{font-size:12px;color:#64748b;}
+.panel{background:#fff;border-radius:12px;box-shadow:0 2px 16px rgba(15,23,42,.08);padding:18px;}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:14px;}
+.ad-card{border:1px solid #e5e7eb;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;}
+.ad-card h3{font-size:14px;}
+.ad-meta{font-size:12px;color:#64748b;}
+.ad-row{display:flex;gap:10px;align-items:center;}
+.ad-row textarea{flex:1;min-height:86px;padding:10px;border-radius:6px;border:1px solid #d1d5db;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
+.ad-switch{font-size:12px;color:#475569;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+.size-inputs{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.size-inputs input{width:120px;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;}
+.preview{border:1px dashed #cbd5e1;border-radius:8px;overflow:hidden;background:#f8fafc;height:110px;}
+.preview iframe{width:100%;height:100%;border:0;}
+.actions{display:flex;justify-content:flex-end;margin-top:16px;}
+.btn{padding:10px 18px;background:#0ea5e9;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;}
+.btn:hover{background:#0284c7;}
+footer{text-align:center;padding:16px;color:#94a3b8;font-size:12px;margin-top:30px;}
+@media(max-width:1000px){.grid{grid-template-columns:1fr;}nav{width:64px;}main{margin-left:64px;}}
 </style>
 </head>
 <body>
@@ -34,32 +47,142 @@ footer{text-align:center;padding:15px;color:#999;font-size:13px;margin-top:40px;
 </nav>
 
 <main>
-<h2>广告配置</h2>
-<form method="post" action="/admin/ads">
-    <label>顶部悬浮广告（支持 HTML / script）</label>
-    <textarea name="top"><?= htmlspecialchars($ads['top'] ?? '') ?></textarea>
+    <div class="page-title">
+        <h2>广告配置</h2>
+        <div class="tips">支持 HTML/script 或直接填 URL（建议使用 iframe 广告链接）</div>
+    </div>
 
-    <label>底部悬浮广告（支持 HTML / script）</label>
-    <textarea name="bottom"><?= htmlspecialchars($ads['bottom'] ?? '') ?></textarea>
+    <form method="post" action="/admin/ads" class="panel">
+        <div class="grid">
+            <div class="ad-card">
+                <h3>顶部横幅广告</h3>
+                <div class="ad-meta">建议尺寸：100% × 90</div>
+                <div class="ad-row">
+                    <label class="ad-switch"><input type="checkbox" name="top_enabled" <?= !empty($ads['top']['enabled']) ? 'checked' : '' ?>> 启用</label>
+                    <div class="size-inputs">
+                        <input type="number" name="top_width" value="<?= (int)$ads['top']['width'] ?>" placeholder="宽(px,可空)">
+                        <input type="number" name="top_height" value="<?= (int)$ads['top']['height'] ?>" placeholder="高(px)">
+                    </div>
+                </div>
+                <div class="ad-row">
+                    <textarea name="top" data-preview="preview-top"><?= htmlspecialchars($ads['top']['content'] ?? '') ?></textarea>
+                </div>
+                <div class="preview"><iframe id="preview-top"></iframe></div>
+            </div>
 
-    <label>左侧悬浮广告（支持 HTML / script）</label>
-    <textarea name="left"><?= htmlspecialchars($ads['left'] ?? '') ?></textarea>
+            <div class="ad-card">
+                <h3>底部横幅广告</h3>
+                <div class="ad-meta">建议尺寸：100% × 90</div>
+                <div class="ad-row">
+                    <label class="ad-switch"><input type="checkbox" name="bottom_enabled" <?= !empty($ads['bottom']['enabled']) ? 'checked' : '' ?>> 启用</label>
+                    <div class="size-inputs">
+                        <input type="number" name="bottom_width" value="<?= (int)$ads['bottom']['width'] ?>" placeholder="宽(px,可空)">
+                        <input type="number" name="bottom_height" value="<?= (int)$ads['bottom']['height'] ?>" placeholder="高(px)">
+                    </div>
+                </div>
+                <div class="ad-row">
+                    <textarea name="bottom" data-preview="preview-bottom"><?= htmlspecialchars($ads['bottom']['content'] ?? '') ?></textarea>
+                </div>
+                <div class="preview"><iframe id="preview-bottom"></iframe></div>
+            </div>
 
-    <label>右侧悬浮广告（支持 HTML / script）</label>
-    <textarea name="right"><?= htmlspecialchars($ads['right'] ?? '') ?></textarea>
+            <div class="ad-card">
+                <h3>左侧悬浮广告</h3>
+                <div class="ad-meta">建议尺寸：120 × 260</div>
+                <div class="ad-row">
+                    <label class="ad-switch"><input type="checkbox" name="left_enabled" <?= !empty($ads['left']['enabled']) ? 'checked' : '' ?>> 启用</label>
+                    <div class="size-inputs">
+                        <input type="number" name="left_width" value="<?= (int)$ads['left']['width'] ?>" placeholder="宽(px)">
+                        <input type="number" name="left_height" value="<?= (int)$ads['left']['height'] ?>" placeholder="高(px)">
+                    </div>
+                </div>
+                <div class="ad-row">
+                    <textarea name="left" data-preview="preview-left"><?= htmlspecialchars($ads['left']['content'] ?? '') ?></textarea>
+                </div>
+                <div class="preview"><iframe id="preview-left"></iframe></div>
+            </div>
 
-    <label>视频播放器顶部广告（支持 HTML / script）</label>
-    <textarea name="video_top"><?= htmlspecialchars($ads['video_top'] ?? '') ?></textarea>
+            <div class="ad-card">
+                <h3>右侧悬浮广告</h3>
+                <div class="ad-meta">建议尺寸：120 × 260</div>
+                <div class="ad-row">
+                    <label class="ad-switch"><input type="checkbox" name="right_enabled" <?= !empty($ads['right']['enabled']) ? 'checked' : '' ?>> 启用</label>
+                    <div class="size-inputs">
+                        <input type="number" name="right_width" value="<?= (int)$ads['right']['width'] ?>" placeholder="宽(px)">
+                        <input type="number" name="right_height" value="<?= (int)$ads['right']['height'] ?>" placeholder="高(px)">
+                    </div>
+                </div>
+                <div class="ad-row">
+                    <textarea name="right" data-preview="preview-right"><?= htmlspecialchars($ads['right']['content'] ?? '') ?></textarea>
+                </div>
+                <div class="preview"><iframe id="preview-right"></iframe></div>
+            </div>
 
-    <label>视频播放器底部广告（支持 HTML / script）</label>
-    <textarea name="video_bottom"><?= htmlspecialchars($ads['video_bottom'] ?? '') ?></textarea>
+            <div class="ad-card">
+                <h3>播放器顶部广告</h3>
+                <div class="ad-meta">建议尺寸：100% × 80</div>
+                <div class="ad-row">
+                    <label class="ad-switch"><input type="checkbox" name="video_top_enabled" <?= !empty($ads['video_top']['enabled']) ? 'checked' : '' ?>> 启用</label>
+                    <div class="size-inputs">
+                        <input type="number" name="video_top_width" value="<?= (int)$ads['video_top']['width'] ?>" placeholder="宽(px,可空)">
+                        <input type="number" name="video_top_height" value="<?= (int)$ads['video_top']['height'] ?>" placeholder="高(px)">
+                    </div>
+                </div>
+                <div class="ad-row">
+                    <textarea name="video_top" data-preview="preview-video-top"><?= htmlspecialchars($ads['video_top']['content'] ?? '') ?></textarea>
+                </div>
+                <div class="preview"><iframe id="preview-video-top"></iframe></div>
+            </div>
 
-    <button type="submit">保存配置</button>
-</form>
+            <div class="ad-card">
+                <h3>播放器底部广告</h3>
+                <div class="ad-meta">建议尺寸：100% × 120</div>
+                <div class="ad-row">
+                    <label class="ad-switch"><input type="checkbox" name="video_bottom_enabled" <?= !empty($ads['video_bottom']['enabled']) ? 'checked' : '' ?>> 启用</label>
+                    <div class="size-inputs">
+                        <input type="number" name="video_bottom_width" value="<?= (int)$ads['video_bottom']['width'] ?>" placeholder="宽(px,可空)">
+                        <input type="number" name="video_bottom_height" value="<?= (int)$ads['video_bottom']['height'] ?>" placeholder="高(px)">
+                    </div>
+                </div>
+                <div class="ad-row">
+                    <textarea name="video_bottom" data-preview="preview-video-bottom"><?= htmlspecialchars($ads['video_bottom']['content'] ?? '') ?></textarea>
+                </div>
+                <div class="preview"><iframe id="preview-video-bottom"></iframe></div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button type="submit" class="btn">保存配置</button>
+        </div>
+    </form>
 </main>
 
 <footer>
 &copy; 2026 后台管理系统
 </footer>
+<script>
+function updatePreview(textarea) {
+    const previewId = textarea.getAttribute('data-preview');
+    const iframe = document.getElementById(previewId);
+    if (!iframe) return;
+    const val = textarea.value.trim();
+    const isUrl = /^https?:\/\//i.test(val);
+    if (!val) {
+        iframe.srcdoc = '<html><body style="margin:0;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-family:Arial;">未配置</body></html>';
+        return;
+    }
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups');
+    if (isUrl) {
+        iframe.src = val;
+    } else {
+        iframe.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><base target="_blank"></head><body style="margin:0">${val}</body></html>`;
+    }
+}
+
+document.querySelectorAll('textarea[data-preview]').forEach(el => {
+    el.addEventListener('input', () => updatePreview(el));
+    updatePreview(el);
+});
+</script>
 </body>
 </html>

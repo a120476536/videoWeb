@@ -145,8 +145,51 @@ php windows.php
 | 分类黑名单 | `common/VideoUtils::blacklist()` | 过滤 `getNav` 中的分类 |
 | 首页推荐 | `IndexController::mainReJson()` | 静态 JSON，可改为接口或数据库 |
 | 播放器顶部广告 | `IndexController::getPlayerAdConfig()` | `enabled` 控制显隐，`html` 为广告 HTML |
-| 整站广告位 | 后台「广告配置」→ `runtime/ads.json` | 顶部/底部/左右/视频底部 |
+| 整站广告位 | 后台「广告配置」→ `runtime/ads.json` | 顶部/底部/左右/播放器顶部/播放器底部 |
 | 后台账号 | `AdminController::$username`、`$password` | 建议改为配置或数据库 |
+
+---
+
+## 广告后台使用手册
+
+### 入口
+1. 启动服务后访问：`http://127.0.0.1:8789/admin/login`
+2. 默认账号密码：`admin / 123456`
+3. 登录后进入「广告配置」
+
+### 广告配置说明
+后台每个广告位都有：
+- **启用开关**：关闭则该广告位不渲染
+- **宽/高**：单位 px；顶部/底部可留空宽度表示 100%
+- **内容**：可填 **URL** 或 **HTML/script**
+
+### 填写规则
+- **URL**：直接填广告落地页/素材页地址，系统用 `iframe` 加载
+- **HTML/script**：支持第三方广告脚本，系统用 `iframe` 的 `srcdoc` 渲染
+- **预览**：填写内容后会实时在后台预览
+
+### 广告位与建议尺寸
+| 位置 | 字段 | 建议尺寸 |
+|------|------|----------|
+| 顶部横幅 | top | 100% × 90 |
+| 底部横幅 | bottom | 100% × 90 |
+| 左侧悬浮 | left | 120 × 260 |
+| 右侧悬浮 | right | 120 × 260 |
+| 播放器顶部 | video_top | 100% × 80 |
+| 播放器底部 | video_bottom | 100% × 120 |
+
+### 数据存储
+配置保存到：`runtime/ads.json`  
+结构示例（节选）：
+```json
+{
+  "top": { "enabled": true, "content": "https://example.com/ad.html", "width": 0, "height": 90 },
+  "left": { "enabled": false, "content": "", "width": 120, "height": 260 }
+}
+```
+
+### 前台展示
+前台页面会加载 `/ads/ads.js` 自动渲染广告位，默认使用 `iframe` 展示。
 
 ---
 

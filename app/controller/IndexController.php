@@ -102,12 +102,40 @@ class IndexController
         $ads = file_exists($adsFile)
             ? json_decode(file_get_contents($adsFile), true)
             : [];
-            
-        // 再次确保输出的是原始 HTML
-        foreach ($ads as $key => $value) {
-            $ads[$key] = htmlspecialchars_decode($value);
+
+        // 兼容旧结构：字符串 => 新结构
+        $defaults = [
+            'top' => ['enabled' => true, 'content' => '', 'width' => 0, 'height' => 90],
+            'bottom' => ['enabled' => true, 'content' => '', 'width' => 0, 'height' => 90],
+            'left' => ['enabled' => true, 'content' => '', 'width' => 120, 'height' => 260],
+            'right' => ['enabled' => true, 'content' => '', 'width' => 120, 'height' => 260],
+            'video_top' => ['enabled' => true, 'content' => '', 'width' => 0, 'height' => 80],
+            'video_bottom' => ['enabled' => true, 'content' => '', 'width' => 0, 'height' => 120],
+        ];
+
+        foreach ($defaults as $key => $def) {
+            if (!isset($ads[$key])) {
+                $ads[$key] = $def;
+                continue;
+            }
+            if (is_string($ads[$key])) {
+                $ads[$key] = array_merge($def, [
+                    'content' => htmlspecialchars_decode($ads[$key]),
+                    'enabled' => trim($ads[$key]) !== '',
+                ]);
+            } elseif (is_array($ads[$key])) {
+                if (isset($ads[$key]['content'])) {
+                    $ads[$key]['content'] = htmlspecialchars_decode($ads[$key]['content']);
+                } elseif (isset($ads[$key]['html'])) {
+                    $ads[$key]['content'] = htmlspecialchars_decode($ads[$key]['html']);
+                    unset($ads[$key]['html']);
+                }
+                $ads[$key] = array_merge($def, $ads[$key]);
+            } else {
+                $ads[$key] = $def;
+            }
         }
-        
+
         return json($ads);
     }
 
@@ -322,10 +350,11 @@ class IndexController
     public function vproxy(Request $request)
     {
         $url = $request->get('url');
+        $debug = (string)$request->get('debug', '');
         VideoLogUtils::info('原始URL参数: ' . $url, 'videoProxy');
 
         if (empty($url)) {
-            VideoLogUtils::error('URL参数为空', 'videoProxy');
+            VideoLogUtils::warning('URL参数为空', 'videoProxy');
             return response('URL参数不能为空', 400);
         }
 
@@ -342,7 +371,7 @@ class IndexController
 
         // 验证URL格式
         if (empty($targetUrl) || !filter_var($targetUrl, FILTER_VALIDATE_URL)) {
-            VideoLogUtils::error('无效的URL: ' . $targetUrl, 'videoProxy');
+            VideoLogUtils::warning('无效的URL: ' . $targetUrl, 'videoProxy');
             return response('无效的URL格式', 400);
         }
 
@@ -351,7 +380,7 @@ class IndexController
         $domain = $parsedUrl['host'] ?? '';
 
         if (empty($domain)) {
-            VideoLogUtils::error('无法解析域名: ' . $targetUrl, 'videoProxy');
+            VideoLogUtils::warning('无法解析域名: ' . $targetUrl, 'videoProxy');
             return response('无法解析域名', 400);
         }
 
@@ -392,14 +421,18 @@ class IndexController
         }
 
         try {
+            $rangeHeader = $request->header('range');
+            $origin = ($parsedUrl['scheme'] ?? 'https') . '://' . $domain;
+            $referer = $targetUrl;
+
             // 使用cURL获取内容
             $ch = curl_init();
             $headers = [
                 'Accept: */*',
                 'Accept-Language: zh-CN,zh;q=0.9,en;q=0.8',
                 'Accept-Encoding: identity',
-                'Referer: https://vip.ffzy-play8.com/',
-                'Origin: https://vip.ffzy-play8.com',
+                'Referer: ' . $referer,
+                'Origin: ' . $origin,
                 'Connection: keep-alive',
                 'Cache-Control: no-cache',
                 'sec-ch-ua: "Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
@@ -411,20 +444,33 @@ class IndexController
                 'DNT: 1',
                 'Upgrade-Insecure-Requests: 1'
             ];
+            if (!empty($rangeHeader)) {
+                $headers[] = 'Range: ' . $rangeHeader;
+            }
+            $responseHeaders = [];
             curl_setopt_array($ch, [
                 CURLOPT_URL => $targetUrl,
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_FOLLOWLOCATION => true,
                 CURLOPT_MAXREDIRS => 5,
-                CURLOPT_TIMEOUT => 30,
+                CURLOPT_TIMEOUT => 45,
                 CURLOPT_CONNECTTIMEOUT => 10,
                 CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
                 CURLOPT_HTTPHEADER => $headers,
-                CURLOPT_HEADER => true,
+                CURLOPT_HEADER => false,
                 CURLOPT_NOBODY => false,
                 // 添加Cookie支持
                 CURLOPT_COOKIEFILE => '', // 启用cookie会话
                 CURLOPT_COOKIEJAR => '', // 保存cookie
+                // 收集最终响应头，避免重定向头混入正文
+                CURLOPT_HEADERFUNCTION => function ($ch, $headerLine) use (&$responseHeaders) {
+                    $len = strlen($headerLine);
+                    if (strpos($headerLine, ':') !== false) {
+                        [$key, $value] = explode(':', $headerLine, 2);
+                        $responseHeaders[trim($key)] = trim($value);
+                    }
+                    return $len;
+                },
             ]);
 
             // SSL设置
@@ -443,36 +489,23 @@ class IndexController
                 $errorCode = curl_errno($ch);
                 curl_close($ch);
 
-                VideoLogUtils::error("cURL错误 [{$errorCode}]: {$error}", 'videoProxy');
+                VideoLogUtils::warning("cURL错误 [{$errorCode}]: {$error}", 'videoProxy');
                 return response("请求失败: {$error}", 500);
             }
 
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-
-            $headerStr = substr($response, 0, $headerSize);
-            $body = substr($response, $headerSize);
+            $body = $response;
 
             curl_close($ch);
 
             if ($httpCode >= 400) {
-                VideoLogUtils::error("HTTP错误: {$httpCode}", 'videoProxy');
+                VideoLogUtils::warning("HTTP错误: {$httpCode}", 'videoProxy');
                 return response("远程服务器错误: HTTP {$httpCode}", $httpCode >= 500 ? 502 : $httpCode);
             }
 
             if (empty($body)) {
                 VideoLogUtils::warning('响应内容为空', 'videoProxy');
                 return response('响应内容为空', 204);
-            }
-
-            // 解析响应头
-            $responseHeaders = [];
-            $headerLines = explode("\r\n", $headerStr);
-            foreach ($headerLines as $line) {
-                if (strpos($line, ':') !== false) {
-                    list($key, $value) = explode(':', $line, 2);
-                    $responseHeaders[trim($key)] = trim($value);
-                }
             }
 
             // 确定内容类型
@@ -490,10 +523,35 @@ class IndexController
                 }
             }
 
+            // 上游可能返回错误的 Content-Type，但内容是 M3U8
+            $trimmedBody = ltrim($body);
+            $isM3U8 = (strpos($trimmedBody, '#EXTM3U') === 0) || strpos($targetUrl, '.m3u8') !== false;
+            if ($isM3U8) {
+                $contentType = 'application/vnd.apple.mpegurl; charset=utf-8';
+            }
+
+            $bodyModified = false;
             // **关键修复：处理M3U8文件中的相对路径**
-            if ($contentType === 'application/vnd.apple.mpegurl' || strpos($targetUrl, '.m3u8') !== false) {
+            if ($isM3U8) {
                 $body = $this->processM3U8Content($body, $targetUrl);
+                $bodyModified = true;
                 VideoLogUtils::info('已处理M3U8文件中的相对路径', 'videoProxy');
+            }
+
+            if ($debug === '1') {
+                $resp = [
+                    'target_url' => $targetUrl,
+                    'http_code' => $httpCode,
+                    'content_type' => $contentType,
+                    'content_length' => strlen($body),
+                    'response_headers' => $responseHeaders,
+                    'is_m3u8' => $isM3U8,
+                    'body_prefix' => $isM3U8 ? substr($body, 0, 200) : null,
+                ];
+                return response(json_encode($resp, JSON_UNESCAPED_UNICODE), 200, [
+                    'Content-Type' => 'application/json; charset=utf-8',
+                    'Cache-Control' => 'no-cache',
+                ]);
             }
 
             $headers = [
@@ -502,19 +560,24 @@ class IndexController
                 'Access-Control-Allow-Methods' => 'GET, OPTIONS',
                 'Access-Control-Allow-Headers' => 'Content-Type, Authorization, Range',
                 'Access-Control-Expose-Headers' => 'Content-Length, Content-Range',
-                'Cache-Control' => 'public, max-age=3600',
+                'Cache-Control' => $isM3U8 ? 'no-cache' : 'public, max-age=3600',
+                'Pragma' => $isM3U8 ? 'no-cache' : 'cache',
+                'Content-Disposition' => 'inline',
             ];
 
             if (isset($responseHeaders['Content-Range'])) {
                 $headers['Content-Range'] = $responseHeaders['Content-Range'];
                 $headers['Accept-Ranges'] = 'bytes';
             }
+            if (!$bodyModified && !$isM3U8 && isset($responseHeaders['Content-Length'])) {
+                $headers['Content-Length'] = $responseHeaders['Content-Length'];
+            }
 
             VideoLogUtils::info("代理成功: {$targetUrl} | Content-Type: {$contentType} | 大小: " . strlen($body), 'videoProxy');
 
             return response($body, $httpCode, $headers);
         } catch (\Exception $e) {
-            VideoLogUtils::error('代理异常: ' . $e->getMessage(), 'videoProxy');
+            VideoLogUtils::warning('代理异常: ' . $e->getMessage(), 'videoProxy');
             return response('代理请求异常: ' . $e->getMessage(), 500);
         }
     }
@@ -550,6 +613,24 @@ class IndexController
 
             // 跳过空行和注释行
             if (empty($line) || strpos($line, '#') === 0) {
+                // 处理含有URI的标签行，例如 EXT-X-KEY / EXT-X-MAP / EXT-X-I-FRAME-STREAM-INF
+                if (strpos($line, '#EXT-X-KEY') === 0 || strpos($line, '#EXT-X-MAP') === 0 || strpos($line, '#EXT-X-I-FRAME-STREAM-INF') === 0) {
+                    $line = preg_replace_callback('/URI=\"([^\"]+)\"/', function ($matches) use ($baseScheme, $baseHost, $baseUrlPrefix) {
+                        $uri = $matches[1];
+                        if (strpos($uri, '/index/vproxy') !== false) {
+                            return 'URI="' . $uri . '"';
+                        }
+                        if (preg_match('/^https?:\/\//', $uri)) {
+                            $fullUrl = $uri;
+                        } elseif (strpos($uri, '/') === 0) {
+                            $fullUrl = $baseScheme . '://' . $baseHost . $uri;
+                        } else {
+                            $fullUrl = $baseUrlPrefix . '/' . ltrim($uri, '/');
+                        }
+                        $proxyUrl = '/index/vproxy?url=' . urlencode($fullUrl);
+                        return 'URI="' . $proxyUrl . '"';
+                    }, $line);
+                }
                 $processedLines[] = $line;
                 continue;
             }
@@ -708,7 +789,7 @@ class IndexController
             ]
         ];
 
-        VideoLogUtils::error('代理错误详情: ' . json_encode($logData, JSON_UNESCAPED_UNICODE), 'videoProxy');
+        VideoLogUtils::warning('代理错误详情: ' . json_encode($logData, JSON_UNESCAPED_UNICODE), 'videoProxy');
     }
 
     /**

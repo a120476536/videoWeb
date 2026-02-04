@@ -44,6 +44,7 @@ class AdminController
         $ads = file_exists($adsFile)
             ? json_decode(file_get_contents($adsFile), true)
             : [];
+        $ads = $this->normalizeAdsConfig($ads);
         return view('admin/ads', ['ads' => $ads, 'currentPath' => $request->path()]);
     }
 
@@ -61,12 +62,42 @@ class AdminController
         $video_bottom = htmlspecialchars_decode($request->post('video_bottom', ''));
 
         $ads = [
-            'top' => $top,
-            'bottom' => $bottom,
-            'left' => $left,
-            'right' => $right,
-            'video_top' => $video_top,
-            'video_bottom' => $video_bottom
+            'top' => [
+                'enabled' => (bool)$request->post('top_enabled', false) || trim($top) !== '',
+                'content' => $top,
+                'width' => (int)$request->post('top_width', 0),
+                'height' => (int)$request->post('top_height', 90),
+            ],
+            'bottom' => [
+                'enabled' => (bool)$request->post('bottom_enabled', false) || trim($bottom) !== '',
+                'content' => $bottom,
+                'width' => (int)$request->post('bottom_width', 0),
+                'height' => (int)$request->post('bottom_height', 90),
+            ],
+            'left' => [
+                'enabled' => (bool)$request->post('left_enabled', false) || trim($left) !== '',
+                'content' => $left,
+                'width' => (int)$request->post('left_width', 120),
+                'height' => (int)$request->post('left_height', 260),
+            ],
+            'right' => [
+                'enabled' => (bool)$request->post('right_enabled', false) || trim($right) !== '',
+                'content' => $right,
+                'width' => (int)$request->post('right_width', 120),
+                'height' => (int)$request->post('right_height', 260),
+            ],
+            'video_top' => [
+                'enabled' => (bool)$request->post('video_top_enabled', false) || trim($video_top) !== '',
+                'content' => $video_top,
+                'width' => (int)$request->post('video_top_width', 0),
+                'height' => (int)$request->post('video_top_height', 80),
+            ],
+            'video_bottom' => [
+                'enabled' => (bool)$request->post('video_bottom_enabled', false) || trim($video_bottom) !== '',
+                'content' => $video_bottom,
+                'width' => (int)$request->post('video_bottom_width', 0),
+                'height' => (int)$request->post('video_bottom_height', 120),
+            ],
         ];
         
         // 使用 runtime_path 确保路径正确
@@ -101,5 +132,33 @@ class AdminController
         if (!$request->session()->get('admin')) {
             return redirect('/admin/login');
         }
+    }
+
+    private function normalizeAdsConfig(array $ads): array
+    {
+        $defaults = [
+            'top' => ['enabled' => true, 'content' => '', 'width' => 0, 'height' => 90],
+            'bottom' => ['enabled' => true, 'content' => '', 'width' => 0, 'height' => 90],
+            'left' => ['enabled' => true, 'content' => '', 'width' => 120, 'height' => 260],
+            'right' => ['enabled' => true, 'content' => '', 'width' => 120, 'height' => 260],
+            'video_top' => ['enabled' => true, 'content' => '', 'width' => 0, 'height' => 80],
+            'video_bottom' => ['enabled' => true, 'content' => '', 'width' => 0, 'height' => 120],
+        ];
+
+        foreach ($defaults as $key => $def) {
+            if (!isset($ads[$key])) {
+                $ads[$key] = $def;
+                continue;
+            }
+            if (is_string($ads[$key])) {
+                $ads[$key] = array_merge($def, [
+                    'content' => $ads[$key],
+                    'enabled' => trim($ads[$key]) !== '',
+                ]);
+            } else {
+                $ads[$key] = array_merge($def, $ads[$key]);
+            }
+        }
+        return $ads;
     }
 }
