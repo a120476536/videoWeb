@@ -24,7 +24,8 @@ function buildIframe(content, options) {
 
     const trimmed = content.trim();
     const isUrl = /^https?:\/\//i.test(trimmed);
-    const isImageUrl = /\.(png|jpe?g|gif|webp|bmp|svg)(\?.*)?$/i.test(trimmed);
+    const isImageUrl = /\.(png|jpe?g|gif|webp|bmp|svg)(\?.*)?$/i.test(trimmed)
+        || /(?:fmt=|image|img|jpg|jpeg|png|webp|gif)/i.test(trimmed);
     if (isUrl) {
         if (isImageUrl) {
             iframe.srcdoc = `<!doctype html>
@@ -74,7 +75,10 @@ body{margin:0;font-family:"Microsoft YaHei",Arial,sans-serif;}
 }
 
 function renderPlaceholder(container, label, options) {
-    container.classList.add('ad-slot', options.className);
+    container.classList.add('ad-slot');
+    if (options.className) {
+        options.className.split(/\s+/).filter(Boolean).forEach(cls => container.classList.add(cls));
+    }
     container.style.height = options.height;
     container.innerHTML = '';
     const placeholder = document.createElement('div');
@@ -98,10 +102,18 @@ function insertAd(containerId, content, label, options) {
         return;
     }
 
-    container.classList.add('ad-slot', options.className);
+    container.classList.add('ad-slot');
+    if (options.className) {
+        options.className.split(/\s+/).filter(Boolean).forEach(cls => container.classList.add(cls));
+    }
     container.style.height = options.height;
     if (options.width) {
-        container.style.width = options.width;
+        const widthVal = parseFloat(options.width);
+        const isPercentWidth = !Number.isNaN(widthVal)
+            && widthVal > 0
+            && widthVal <= 100
+            && /ad-(top|bottom|video)/.test(options.className);
+        container.style.width = isPercentWidth ? `${widthVal}%` : options.width;
         container.style.marginLeft = 'auto';
         container.style.marginRight = 'auto';
     }
@@ -175,6 +187,15 @@ function initAds() {
             insertAd('ad-video-top', videoTop.content, map['ad-video-top'].label, { ...map['ad-video-top'], enabled: videoTop.enabled });
             insertAd('ad-video-bottom', videoBottom.content, map['ad-video-bottom'].label, { ...map['ad-video-bottom'], enabled: videoBottom.enabled });
 
+            // 兜底：若渲染后仍为空，尝试再次渲染
+            ['ad-video-top', 'ad-video-bottom'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el && el.innerHTML.trim() === '') {
+                    const data = id === 'ad-video-top' ? videoTop : videoBottom;
+                    insertAd(id, data.content, map[id].label, { ...map[id], enabled: data.enabled });
+                }
+            });
+
             if (!top.enabled) document.body.classList.remove('has-ad-top');
             if (!bottom.enabled) document.body.classList.remove('has-ad-bottom');
         })
@@ -186,3 +207,6 @@ if (document.readyState === 'loading') {
 } else {
     initAds();
 }
+
+window.addEventListener('pageshow', () => setTimeout(initAds, 0));
+setTimeout(initAds, 300);

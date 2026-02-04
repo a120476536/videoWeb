@@ -41,6 +41,16 @@
         .no-data {text-align:center; padding:40px; color:#999; grid-column:1/-1;}
 
         @media(max-width:1024px){.video_content_card {padding-left:20px; padding-right:20px;} #ad-left,#ad-right{display:none;}}
+        @media(max-width:768px){
+            .header-container{grid-template-columns:1fr; gap:12px; padding:0 12px;}
+            .logo{font-size:22px; text-align:center;}
+            .nav-dropdown{overflow-x:auto; justify-content:flex-start;}
+            .nav-item, .nav-dropdown-item{font-size:13px; padding:6px 12px;}
+            .search-box{width:100%;}
+            .search-input{width:100%;}
+            .video_content_card{grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; padding-left:12px; padding-right:12px;}
+            #ad-left,#ad-right{display:none;}
+        }
         @media(max-width:768px){.video_content_card{grid-template-columns:repeat(auto-fill,minmax(240px,1fr));}}
         @media(max-width:480px){.video_content_card{grid-template-columns:1fr;}}
     </style>

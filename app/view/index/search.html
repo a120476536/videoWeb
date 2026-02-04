@@ -138,6 +138,20 @@ body{
 }
 /* 广告样式由 /ads/ads.css 提供 */
 
+@media (max-width: 768px) {
+    .header-inner{flex-direction:column; gap:10px; align-items:stretch;}
+    .logo{font-size:22px; text-align:center;}
+    .search-box{margin-left:0; width:100%;}
+    .search-input{width:100%;}
+    .search-btn{right:6px;}
+    .main{margin:12px auto; padding:0 12px;}
+    .search-stats{flex-wrap:wrap; gap:10px;}
+    .search-layout{grid-template-columns:1fr; gap:12px;}
+    .channel-list{display:flex; flex-wrap:nowrap; overflow-x:auto; gap:8px; min-height:auto;}
+    .channel-item{margin-bottom:0; white-space:nowrap;}
+    .video-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px;}
+    .card-image{height:140px;}
+}
 </style>
 </head>
 <body>

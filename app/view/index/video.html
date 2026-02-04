@@ -82,6 +82,25 @@
             padding: 16px;
         }
 
+        .layout {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .layout-main {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        .layout-side {
+            width: 360px;
+            flex: 0 0 360px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
         /* 播放器容器 */
         .player-container {
             background: #000;
@@ -129,16 +148,18 @@
             position: relative;
             width: 100%;
             background: #000;
-            min-height: 300px;
+            aspect-ratio: 16 / 9;
+            min-height: 360px;
         }
 
         #hlsPlayer {
+            position: absolute;
+            inset: 0;
             width: 100%;
-            min-height: 40vh;
-            max-height: 80vh;
-            height: auto;
+            height: 100%;
             background: #000;
             display: block;
+            object-fit: contain;
         }
 
         /* 视频状态指示器 - 精简版 */
@@ -426,6 +447,12 @@
             line-height: 1.6;
         }
 
+        .video-info {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
         /* 选集区域 */
         .episode-section {
             background: #1a1a1a;
@@ -509,6 +536,75 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 20px;
+        }
+
+        @media (max-width: 1100px) {
+            .layout {
+                flex-direction: column;
+            }
+            .layout-side {
+                width: 100%;
+                flex: 1 1 auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 10px;
+            }
+            .header-container {
+                padding: 0 12px;
+            }
+            .layout {
+                gap: 12px;
+            }
+            .player-container {
+                border-radius: 6px;
+                margin-bottom: 12px;
+            }
+            .video-wrapper {
+                min-height: 220px;
+            }
+            .layout-side {
+                gap: 12px;
+            }
+            .video-info,
+            .episode-section,
+            .recommend-section {
+                padding: 14px;
+                border-radius: 6px;
+            }
+            .video-title {
+                font-size: 18px;
+            }
+            .video-meta {
+                gap: 10px;
+                font-size: 12px;
+            }
+            .episode-list {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 8px;
+                max-height: 260px;
+            }
+            .episode-btn {
+                padding: 8px 0;
+                min-width: 0;
+                font-size: 12px;
+            }
+            .sources-list {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 8px;
+            }
+            .source-btn {
+                padding: 8px 0;
+                font-size: 12px;
+            }
+            #ad-video-top,
+            #ad-video-bottom {
+                margin: 8px auto;
+            }
         }
 
         .recommend-card {
@@ -719,11 +815,13 @@
         <div id="debugContent"></div>
     </div>
 
-    <!-- 播放器顶部广告（后台配置） -->
-    <div id="ad-video-top"></div>
+    <div class="layout">
+        <div class="layout-main">
+            <!-- 播放器顶部广告（后台配置） -->
+            <div id="ad-video-top"></div>
 
-    <!-- 播放器区域 -->
-    <div class="player-container">
+            <!-- 播放器区域 -->
+            <div class="player-container">
         <div class="video-wrapper">
             <!-- 视频播放器 -->
             <video id="hlsPlayer" 
@@ -778,49 +876,58 @@
                 </p>
             </div>
         </div>
-    </div>
+            </div>
 
-    <!-- 播放器底部广告（后台配置） -->
-    <div id="ad-video-bottom"></div>
-
-    <!-- 视频信息 -->
-    <div id="videoInfo" class="video-info" style="display: none;">
-        <h1 class="video-title" id="videoTitle">加载中...</h1>
-        <div class="video-meta">
-            <span id="videoYear">年份：加载中...</span>
-            <span id="videoType">类型：加载中...</span>
-            <span id="videoArea">地区：加载中...</span>
-            <span id="videoRemarks">更新：加载中...</span>
+            <!-- 播放器底部广告（后台配置） -->
+            <div id="ad-video-bottom"></div>
         </div>
-        <div class="video-desc" id="videoDesc">简介：加载中...</div>
-    </div>
 
-    <!-- 播放源选择 -->
-    <div id="sourceSection" class="episode-section" style="display: none;">
-        <h2 class="section-title">播放源</h2>
-        <div class="sources-list" id="sourceList">
-            <!-- 播放源按钮将通过JavaScript动态生成 -->
-        </div>
-    </div>
+        <aside class="layout-side">
+            <!-- 视频信息 -->
+            <div id="videoInfo" class="video-info" style="display: none;">
+                <h1 class="video-title" id="videoTitle">加载中...</h1>
+                <div class="video-meta">
+                    <span id="videoYear">年份：加载中...</span>
+                    <span id="videoType">类型：加载中...</span>
+                    <span id="videoArea">地区：加载中...</span>
+                    <span id="videoRemarks">更新：加载中...</span>
+                </div>
+                <div class="video-desc" id="videoDesc">简介：加载中...</div>
+            </div>
 
-    <!-- 选集区域 -->
-    <div id="episodeSection" class="episode-section" style="display: none;">
-        <h2 class="section-title">播放列表</h2>
-        <div class="episode-list" id="episodeList">
-            <!-- 选集按钮将通过JavaScript动态生成 -->
-        </div>
-    </div>
+            <!-- 播放源选择 -->
+            <div id="sourceSection" class="episode-section" style="display: none;">
+                <h2 class="section-title">播放源</h2>
+                <div class="sources-list" id="sourceList">
+                    <!-- 播放源按钮将通过JavaScript动态生成 -->
+                </div>
+            </div>
 
-    <!-- 相关推荐 -->
-    <div id="recommendSection" class="recommend-section" style="display: none;">
-        <h2 class="section-title">相关推荐</h2>
-        <div class="recommend-grid" id="recommendList">
-            <!-- 推荐内容将通过JavaScript动态生成 -->
-        </div>
+            <!-- 选集区域 -->
+            <div id="episodeSection" class="episode-section" style="display: none;">
+                <h2 class="section-title">播放列表</h2>
+                <div class="episode-list" id="episodeList">
+                    <!-- 选集按钮将通过JavaScript动态生成 -->
+                </div>
+            </div>
+
+            <!-- 相关推荐 -->
+            <div id="recommendSection" class="recommend-section" style="display: none;">
+                <h2 class="section-title">相关推荐</h2>
+                <div class="recommend-grid" id="recommendList">
+                    <!-- 推荐内容将通过JavaScript动态生成 -->
+                </div>
+            </div>
+        </aside>
     </div>
 </main>
 
-<script src="/ads/ads.js"></script>
+<script src="/ads/ads.js?v=2"></script>
+<script>
+    if (typeof initAds === 'function') {
+        initAds();
+    }
+</script>
 
 <!-- 引入HLS.js库 -->
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -1079,7 +1186,7 @@
         videoPlayer.style.display = 'block';
 
         // 设置视频属性
-        videoPlayer.muted = true;
+        videoPlayer.muted = false;
         videoPlayer.autoplay = true;
         
         // 优化预加载设置
