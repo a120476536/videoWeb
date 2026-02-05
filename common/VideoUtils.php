@@ -4,17 +4,9 @@ namespace common;
 use support\Cache;
 class VideoUtils
 {
-    public static function systemName(): string
+    private static function defaultChannelsData(): array
     {
-        return "神特么影视站";
-    }
-    public static function systemLogo():string
-    {
-        return '/favicon.ico';
-    }
-    public static function channels(): bool|string
-    {
-        $data = [
+        return [
             "code" => 1,
             "list" => [
                 [
@@ -128,6 +120,29 @@ class VideoUtils
             ],
             "msg" => "success"
         ];
+    }
+
+    public static function systemName(): string
+    {
+        return "神特么影视站";
+    }
+    public static function systemLogo():string
+    {
+        return '/favicon.ico';
+    }
+    public static function channels(): bool|string
+    {
+        $data = self::defaultChannelsData();
+        if (function_exists('runtime_path')) {
+            $file = runtime_path() . '/channels.json';
+            if (is_file($file)) {
+                $json = file_get_contents($file);
+                $decoded = json_decode($json, true);
+                if (is_array($decoded) && isset($decoded['list']) && is_array($decoded['list'])) {
+                    $data = $decoded;
+                }
+            }
+        }
 
         return json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     }
@@ -148,6 +163,9 @@ class VideoUtils
         $channels = json_decode(self::channels(), true);
 
         foreach ($channels['list'] as $channel) {
+            if (($channel['channel_status'] ?? '1') !== '1') {
+                continue;
+            }
             $url = rtrim($channel['channel_url'], '/') . '?ac=list&page=1';
             $options = [
                 'http' => [
@@ -172,6 +190,30 @@ class VideoUtils
                 // 写缓存，有效期 10 分钟
                 Cache::set($cacheKey, $channel, 6000);
                 Cache::set($cacheNavKey, $data, 6000);
+                $history = Cache::get('useChannelHistory', []);
+                if (!is_array($history)) {
+                    $history = [];
+                }
+                $entry = [
+                    'channel_id' => $channel['channel_id'] ?? 0,
+                    'channel_name' => $channel['channel_name'] ?? '',
+                    'channel_url' => $channel['channel_url'] ?? '',
+                    'used_at' => date('Y-m-d H:i:s'),
+                ];
+                $filtered = [];
+                $seen = [];
+                $list = array_merge([$entry], $history);
+                foreach ($list as $item) {
+                    $cid = (string)($item['channel_id'] ?? '');
+                    if ($cid === '' || isset($seen[$cid])) {
+                        continue;
+                    }
+                    $seen[$cid] = true;
+                    $filtered[] = $item;
+                }
+                $history = $filtered;
+                $history = array_slice($history, 0, 5);
+                Cache::set('useChannelHistory', $history, 86400);
                 return ['channel'=>$channel,'data'=>$data];
             }
         }

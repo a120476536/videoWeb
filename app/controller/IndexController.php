@@ -4,6 +4,7 @@ namespace app\controller;
 
 use common\VideoLogUtils;
 use common\VideoUtils;
+use support\Cache;
 use support\Request;
 
 class IndexController
@@ -71,6 +72,48 @@ class IndexController
             'keyword'  => $keyword,
             'channels' => $channels['list'],
         ]);
+    }
+
+    // 记录搜索成功渠道
+    public function searchHit(Request $request)
+    {
+        $channelId = (int)$request->post('channel_id', 0);
+        $channelName = trim((string)$request->post('channel_name', ''));
+        $channelUrl = trim((string)$request->post('channel_url', ''));
+        $keyword = trim((string)$request->post('keyword', ''));
+
+        if ($channelId <= 0 || $channelName === '' || $channelUrl === '') {
+            return json(['ok' => false, 'message' => 'invalid']);
+        }
+
+        $history = Cache::get('searchSuccessChannels', []);
+        if (!is_array($history)) {
+            $history = [];
+        }
+
+        $entry = [
+            'channel_id' => $channelId,
+            'channel_name' => $channelName,
+            'channel_url' => $channelUrl,
+            'keyword' => $keyword,
+            'used_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $filtered = [];
+        $seen = [];
+        $list = array_merge([$entry], $history);
+        foreach ($list as $item) {
+            $key = ($item['channel_id'] ?? '') . '|' . ($item['keyword'] ?? '');
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $filtered[] = $item;
+        }
+        $history = array_slice($filtered, 0, 10);
+        Cache::set('searchSuccessChannels', $history, 86400);
+
+        return json(['ok' => true]);
     }
 
     function proxy(Request $request)

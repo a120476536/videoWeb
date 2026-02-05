@@ -2,7 +2,9 @@
 namespace app\controller;
 
 use support\Request;
+use support\Cache;
 use common\VideoLogUtils;
+use common\VideoUtils;
 
 class AdminController
 {
@@ -33,7 +35,45 @@ class AdminController
     public function dashboard(Request $request)
     {
         $this->checkLogin($request);
-        return view('admin/dashboard', ['currentPath' => $request->path()]);
+        $adsFile = runtime_path() . '/ads.json';
+        $ads = file_exists($adsFile)
+            ? json_decode(file_get_contents($adsFile), true)
+            : [];
+        $ads = $this->normalizeAdsConfig($ads);
+
+        $enabledPositions = [];
+        foreach ($ads as $key => $cfg) {
+            if (!empty($cfg['enabled'])) {
+                $enabledPositions[] = $key;
+            }
+        }
+
+        $channelsData = json_decode(VideoUtils::channels(), true);
+        $channels = $channelsData['list'] ?? [];
+        $enabledChannels = array_values(array_filter($channels, function ($c) {
+            return ($c['channel_status'] ?? '1') === '1';
+        }));
+
+        $currentChannel = Cache::get('useChannel');
+        $history = Cache::get('useChannelHistory', []);
+        if (!is_array($history)) {
+            $history = [];
+        }
+        $searchHits = Cache::get('searchSuccessChannels', []);
+        if (!is_array($searchHits)) {
+            $searchHits = [];
+        }
+
+        return view('admin/dashboard', [
+            'currentPath' => $request->path(),
+            'adsEnabledCount' => count($enabledPositions),
+            'adsEnabledPositions' => $enabledPositions,
+            'channelsEnabledCount' => count($enabledChannels),
+            'channelsTotalCount' => count($channels),
+            'currentChannel' => $currentChannel,
+            'recentChannels' => $history,
+            'searchHits' => $searchHits,
+        ]);
     }
 
     // 广告配置页
@@ -46,6 +86,85 @@ class AdminController
             : [];
         $ads = $this->normalizeAdsConfig($ads);
         return view('admin/ads', ['ads' => $ads, 'currentPath' => $request->path()]);
+    }
+
+    // 渠道管理页
+    public function channelsPage(Request $request)
+    {
+        $this->checkLogin($request);
+        $channelsData = json_decode(VideoUtils::channels(), true);
+        $channels = $channelsData['list'] ?? [];
+        return view('admin/channels', [
+            'channels' => $channels,
+            'currentPath' => $request->path()
+        ]);
+    }
+
+    // 保存渠道配置
+    public function saveChannels(Request $request)
+    {
+        $this->checkLogin($request);
+        $rows = $request->post('channels', []);
+        if (!is_array($rows)) {
+            $rows = [];
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $existing = json_decode(VideoUtils::channels(), true);
+        $maxId = 0;
+        foreach (($existing['list'] ?? []) as $item) {
+            $maxId = max($maxId, (int)($item['channel_id'] ?? 0));
+        }
+
+        $list = [];
+        foreach ($rows as $row) {
+            $name = trim((string)($row['channel_name'] ?? ''));
+            $url = trim((string)($row['channel_url'] ?? ''));
+            if ($name === '' || $url === '') {
+                continue;
+            }
+
+            $id = (int)($row['channel_id'] ?? 0);
+            if ($id <= 0) {
+                $id = ++$maxId;
+            }
+
+            $createTime = trim((string)($row['create_time'] ?? ''));
+            if ($createTime === '') {
+                $createTime = $now;
+            }
+
+            $list[] = [
+                'channel_id' => $id,
+                'channel_name' => $name,
+                'channel_url' => $url,
+                'channel_status' => (string)((int)($row['channel_status'] ?? 0)),
+                'channel_sort' => (string)((int)($row['channel_sort'] ?? 0)),
+                'create_time' => $createTime,
+                'update_time' => $now,
+            ];
+        }
+
+        $data = [
+            'code' => 1,
+            'list' => $list,
+            'msg' => 'success'
+        ];
+
+        $channelsFile = runtime_path() . '/channels.json';
+        $result = file_put_contents($channelsFile, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+        VideoLogUtils::info([
+            'action' => 'saveChannels',
+            'file' => $channelsFile,
+            'count' => count($list),
+            'result' => $result !== false
+        ], 'admin_channels');
+
+        Cache::delete('useChannel');
+        Cache::delete('useNav');
+
+        return redirect('/admin/channels');
     }
 
     // 保存广告

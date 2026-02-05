@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>渠道管理</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{
+    --bg:#f3f8f4;
+    --card:#ffffff;
+    --text:#0f172a;
+    --muted:#6b7280;
+    --green:#16a34a;
+    --green-2:#22c55e;
+    --line:#e5e7eb;
+    --shadow:0 10px 30px rgba(17,24,39,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+    font-family:"PingFang SC","Noto Sans SC","Microsoft YaHei",Arial,sans-serif;
+    background:radial-gradient(900px 600px at 10% -10%, #dff7e8 0%, transparent 60%),
+               radial-gradient(900px 600px at 110% -20%, #e1f3ff 0%, transparent 55%),
+               var(--bg);
+    color:var(--text);
+}
+.layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh;}
+.sidebar{
+    background:linear-gradient(180deg,#0f172a 0%, #111827 100%);
+    color:#e5e7eb;
+    padding:22px 18px;
+    position:sticky;top:0;height:100vh;
+}
+.brand{font-weight:800;letter-spacing:.5px;margin-bottom:20px;}
+.nav a{
+    display:flex;align-items:center;gap:10px;
+    padding:12px 12px;border-radius:10px;color:#cbd5e1;
+    text-decoration:none;margin-bottom:6px;transition:.2s;
+}
+.nav a.active,.nav a:hover{background:#1f2937;color:#fff;}
+.content{
+    padding:18px 24px 40px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+}
+.topbar{
+    position:sticky;top:0;z-index:5;
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--card);border:1px solid var(--line);
+    border-radius:14px;padding:14px 18px;box-shadow:var(--shadow);
+}
+.topbar .brand-line{font-weight:800;letter-spacing:.4px;}
+.user a{color:var(--green);text-decoration:none;margin-left:8px;}
+.panel{
+    background:var(--card);border:1px solid var(--line);
+    border-radius:16px;padding:18px;box-shadow:var(--shadow);
+}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;}
+.panel-head h2{font-size:20px;}
+.hint{font-size:12px;color:var(--muted);}
+.btn{
+    padding:8px 14px;border:none;border-radius:10px;font-weight:700;cursor:pointer;
+    background:linear-gradient(135deg,var(--green),var(--green-2));color:#fff;
+    box-shadow:0 6px 14px rgba(22,163,74,.25);
+}
+.btn.secondary{background:#e5e7eb;color:#111827;box-shadow:none;}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px;}
+table{width:100%;border-collapse:collapse;min-width:860px;}
+thead{background:#f0fdf4;}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;font-size:13px;}
+th{color:#065f46;font-weight:700;}
+tr:last-child td{border-bottom:none;}
+input[type="text"],input[type="number"]{
+    width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:8px;
+}
+.actions{display:flex;justify-content:flex-end;margin-top:16px;}
+.row-actions button{padding:6px 10px;border-radius:8px;border:1px solid #fecaca;background:#fee2e2;color:#b91c1c;cursor:pointer;}
+.switch{display:flex;align-items:center;gap:6px;}
+footer{text-align:center;color:#9ca3af;font-size:12px;margin-top:26px;}
+
+@media(max-width:1100px){
+    .layout{grid-template-columns:80px 1fr;}
+    .brand{font-size:14px;}
+    .nav a span{display:none;}
+}
+@media(max-width:640px){
+    .content{padding:18px;}
+    .topbar{flex-direction:column;align-items:flex-start;gap:8px;}
+    .panel-head{flex-direction:column;align-items:flex-start;}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="brand">后台管理系统</div>
+        <nav class="nav">
+            <a href="/admin/dashboard" class="<?= ($currentPath=='/admin/dashboard')?'active':'' ?>"><span>仪表盘</span></a>
+            <a href="/admin/ads" class="<?= ($currentPath=='/admin/ads')?'active':'' ?>"><span>广告配置</span></a>
+            <a href="/admin/channels" class="<?= ($currentPath=='/admin/channels')?'active':'' ?>"><span>渠道管理</span></a>
+        </nav>
+    </aside>
+
+    <main class="content">
+        <div class="topbar">
+            <div class="brand-line">后台管理系统</div>
+            <div class="user">管理员 | <a href="/admin/logout">退出登录</a></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head">
+                <div>
+                    <h2>渠道管理</h2>
+                    <div class="hint">支持新增 / 删除 / 启用禁用，保存后立即生效</div>
+                </div>
+                <button class="btn" type="button" id="addRow">新增渠道</button>
+            </div>
+
+            <form method="post" action="/admin/channels">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th style="width:80px;">ID</th>
+                            <th style="width:160px;">名称</th>
+                            <th>URL</th>
+                            <th style="width:90px;">启用</th>
+                            <th style="width:120px;">排序</th>
+                            <th style="width:160px;">创建时间</th>
+                            <th style="width:120px;">操作</th>
+                        </tr>
+                        </thead>
+                        <tbody id="channelBody">
+                        <?php foreach ($channels as $i => $c): ?>
+                            <tr class="channel-row">
+                                <td>
+                                    <input type="number" name="channels[<?= $i ?>][channel_id]" value="<?= (int)($c['channel_id'] ?? 0) ?>">
+                                </td>
+                                <td>
+                                    <input type="text" name="channels[<?= $i ?>][channel_name]" value="<?= htmlspecialchars($c['channel_name'] ?? '') ?>">
+                                </td>
+                                <td>
+                                    <input type="text" name="channels[<?= $i ?>][channel_url]" value="<?= htmlspecialchars($c['channel_url'] ?? '') ?>">
+                                </td>
+                                <td>
+                                    <div class="switch">
+                                        <input type="hidden" name="channels[<?= $i ?>][channel_status]" value="0">
+                                        <input type="checkbox" name="channels[<?= $i ?>][channel_status]" value="1" <?= ($c['channel_status'] ?? '1') == '1' ? 'checked' : '' ?>>
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="number" name="channels[<?= $i ?>][channel_sort]" value="<?= (int)($c['channel_sort'] ?? 0) ?>">
+                                </td>
+                                <td>
+                                    <input type="text" name="channels[<?= $i ?>][create_time]" value="<?= htmlspecialchars($c['create_time'] ?? '') ?>">
+                                </td>
+                                <td class="row-actions">
+                                    <button type="button" class="removeRow">删除</button>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="actions">
+                    <button class="btn" type="submit">保存配置</button>
+                </div>
+            </form>
+        </div>
+
+        <footer>&copy; 2026 后台管理系统</footer>
+    </main>
+</div>
+
+<script>
+const bodyEl = document.getElementById('channelBody');
+const addBtn = document.getElementById('addRow');
+
+function buildRow(index) {
+    const tr = document.createElement('tr');
+    tr.className = 'channel-row';
+    tr.innerHTML = `
+        <td><input type="number" name="channels[${index}][channel_id]" value=""></td>
+        <td><input type="text" name="channels[${index}][channel_name]" value=""></td>
+        <td><input type="text" name="channels[${index}][channel_url]" value=""></td>
+        <td>
+            <div class="switch">
+                <input type="hidden" name="channels[${index}][channel_status]" value="0">
+                <input type="checkbox" name="channels[${index}][channel_status]" value="1" checked>
+            </div>
+        </td>
+        <td><input type="number" name="channels[${index}][channel_sort]" value="0"></td>
+        <td><input type="text" name="channels[${index}][create_time]" value=""></td>
+        <td class="row-actions"><button type="button" class="removeRow">删除</button></td>
+    `;
+    return tr;
+}
+
+function reindexRows() {
+    const rows = document.querySelectorAll('.channel-row');
+    rows.forEach((row, idx) => {
+        row.querySelectorAll('input').forEach(input => {
+            input.name = input.name.replace(/channels\\[\\d+\\]/, `channels[${idx}]`);
+        });
+    });
+}
+
+addBtn.addEventListener('click', () => {
+    const index = document.querySelectorAll('.channel-row').length;
+    bodyEl.appendChild(buildRow(index));
+});
+
+bodyEl.addEventListener('click', (e) => {
+    if (!e.target.classList.contains('removeRow')) return;
+    const row = e.target.closest('.channel-row');
+    if (row) {
+        row.remove();
+        reindexRows();
+    }
+});
+</script>
+</body>
+</html>

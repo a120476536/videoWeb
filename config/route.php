@@ -21,6 +21,7 @@ use app\controller\AdminController;
 
 Route::get('/', [app\controller\IndexController::class, 'index']);
 Route::get('/index/nav', [app\controller\IndexController::class, 'nav']);
+Route::post('/index/search-hit', [app\controller\IndexController::class, 'searchHit']);
 
 
 // 登录页面
@@ -33,6 +34,10 @@ Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
 // 广告配置
 Route::get('/admin/ads', [AdminController::class, 'adsPage']);
 Route::post('/admin/ads', [AdminController::class, 'saveAds']);
+
+// 渠道管理
+Route::get('/admin/channels', [AdminController::class, 'channelsPage']);
+Route::post('/admin/channels', [AdminController::class, 'saveChannels']);
 
 // 前端读取广告
 Route::get('/ads.json', [app\controller\IndexController::class, 'getAds']);

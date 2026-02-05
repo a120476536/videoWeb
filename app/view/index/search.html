@@ -260,6 +260,7 @@ function searchChannel(channel, done){
             totalResults += d.list.length;
 
             appendChannel(channel);
+            recordSearchHit(channel);
 
             if(!firstActiveSet){
                 firstActiveSet = true;
@@ -272,6 +273,19 @@ function searchChannel(channel, done){
     .catch(()=>{
         done();
     });
+}
+
+function recordSearchHit(channel){
+    const payload = new URLSearchParams();
+    payload.set('channel_id', channel.channel_id);
+    payload.set('channel_name', channel.channel_name);
+    payload.set('channel_url', channel.channel_url);
+    payload.set('keyword', keyword || '');
+    fetch('/index/search-hit', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'},
+        body: payload.toString()
+    }).catch(()=>{});
 }
 
 function appendChannel(channel){
