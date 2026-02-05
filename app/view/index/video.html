@@ -1155,14 +1155,8 @@
             return null;
         }
 
-        if (originalUrl.includes('/index/vproxy')) {
-            debugLog('已是代理URL', originalUrl);
-            return originalUrl;
-        }
-
-        const proxyUrl = '/index/vproxy?url=' + encodeURIComponent(originalUrl);
-        debugLog('构建代理URL', {original: originalUrl, proxy: proxyUrl});
-        return proxyUrl;
+        debugLog('直连原始URL', originalUrl);
+        return originalUrl;
     }
 
     // 显示播放/暂停按钮
@@ -1217,6 +1211,7 @@
             hls = new Hls({
                 enableWorker: true,
                 debug: false,
+                maxConcurrentDownloads: 1,
                 maxBufferLength: 60, // 更大的前向缓冲，减少卡顿
                 maxMaxBufferLength: 120,
                 maxBufferSize: 120 * 1000 * 1000, // 120MB缓冲区

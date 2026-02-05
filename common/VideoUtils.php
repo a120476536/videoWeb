@@ -18,15 +18,6 @@ class VideoUtils
             "code" => 1,
             "list" => [
                 [
-                    "channel_id" => 2,
-                    "channel_name" => "非凡",
-                    "channel_url" => "http://api.ffzyapi.com/api.php/provide/vod/",
-                    "channel_status" => "1",
-                    "channel_sort" => "99",
-                    "create_time" => "2025-01-03 18:07:08",
-                    "update_time" => "2025-01-03 18:07:08"
-                ],
-                [
                     "channel_id" => 4,
                     "channel_name" => "无尽",
                     "channel_url" => "https://api.wujinapi.me/api.php/provide/vod/",

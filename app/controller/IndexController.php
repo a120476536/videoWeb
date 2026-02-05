@@ -351,6 +351,9 @@ class IndexController
     {
         $url = $request->get('url');
         $debug = (string)$request->get('debug', '');
+        $noRange = $request->get('norange') === '1';
+        $uaMode = (string)$request->get('ua', '');
+        $rewriteM3u8 = $request->get('rewrite') === '1';
         VideoLogUtils::info('原始URL参数: ' . $url, 'videoProxy');
 
         if (empty($url)) {
@@ -374,6 +377,8 @@ class IndexController
             VideoLogUtils::warning('无效的URL: ' . $targetUrl, 'videoProxy');
             return response('无效的URL格式', 400);
         }
+        $targetPath = parse_url($targetUrl, PHP_URL_PATH) ?? '';
+        $isTsRequest = stripos($targetPath, '.ts') !== false;
 
         // 提取域名进行白名单检查
         $parsedUrl = parse_url($targetUrl);
@@ -422,81 +427,161 @@ class IndexController
 
         try {
             $rangeHeader = $request->header('range');
+            if ($noRange) {
+                $rangeHeader = null;
+            }
             $origin = ($parsedUrl['scheme'] ?? 'https') . '://' . $domain;
             $referer = $targetUrl;
+            $clientUa = (string)$request->header('user-agent', '');
+            $forceAndroid = $uaMode === 'android';
+            $forceOkhttp = $uaMode === 'okhttp';
+            $androidUa = 'Mozilla/5.0 (Linux; Android 12; Pixel 6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
+            $okhttpUa = 'okhttp/4.9.3';
 
-            // 使用cURL获取内容
-            $ch = curl_init();
-            $headers = [
-                'Accept: */*',
-                'Accept-Language: zh-CN,zh;q=0.9,en;q=0.8',
-                'Accept-Encoding: identity',
-                'Referer: ' . $referer,
-                'Origin: ' . $origin,
-                'Connection: keep-alive',
-                'Cache-Control: no-cache',
-                'sec-ch-ua: "Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
-                'sec-ch-ua-mobile: ?0',
-                'sec-ch-ua-platform: "Windows"',
-                'sec-fetch-dest: video',
-                'sec-fetch-mode: no-cors',
-                'sec-fetch-site: same-site',
-                'DNT: 1',
-                'Upgrade-Insecure-Requests: 1'
-            ];
-            if (!empty($rangeHeader)) {
-                $headers[] = 'Range: ' . $rangeHeader;
+            if ($uaMode === '' && $isTsRequest) {
+                // TS 分片对机房/浏览器更敏感，默认走 okhttp + noRange
+                $forceOkhttp = true;
+                $noRange = true;
             }
-            $responseHeaders = [];
-            curl_setopt_array($ch, [
-                CURLOPT_URL => $targetUrl,
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_MAXREDIRS => 5,
-                CURLOPT_TIMEOUT => 45,
-                CURLOPT_CONNECTTIMEOUT => 10,
-                CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
-                CURLOPT_HTTPHEADER => $headers,
-                CURLOPT_HEADER => false,
-                CURLOPT_NOBODY => false,
-                // 添加Cookie支持
-                CURLOPT_COOKIEFILE => '', // 启用cookie会话
-                CURLOPT_COOKIEJAR => '', // 保存cookie
-                // 收集最终响应头，避免重定向头混入正文
-                CURLOPT_HEADERFUNCTION => function ($ch, $headerLine) use (&$responseHeaders) {
-                    $len = strlen($headerLine);
-                    if (strpos($headerLine, ':') !== false) {
-                        [$key, $value] = explode(':', $headerLine, 2);
-                        $responseHeaders[trim($key)] = trim($value);
-                    }
-                    return $len;
-                },
-            ]);
 
-            // SSL设置
-            if (strpos($targetUrl, 'https://') === 0) {
+            $doRequest = function (string $ua, ?string $rangeOverride = null, string $mode = '') use ($targetUrl, $origin, $referer) {
+                $secChMobile = stripos($ua, 'Mobile') !== false ? '?1' : '?0';
+                $secChPlatform = stripos($ua, 'Android') !== false ? '"Android"' : '"Windows"';
+                if ($mode === 'okhttp') {
+                    $requestHeaders = [
+                        'Accept: */*',
+                        'Connection: Keep-Alive',
+                    ];
+                } else {
+                    $requestHeaders = [
+                        'Accept: */*',
+                        'Accept-Language: zh-CN,zh;q=0.9,en;q=0.8',
+                        'Accept-Encoding: identity',
+                        'Referer: ' . $referer,
+                        'Origin: ' . $origin,
+                        'Connection: keep-alive',
+                        'Cache-Control: no-cache',
+                        'sec-ch-ua: "Chromium";v="120", "Not=A?Brand";v="24", "Google Chrome";v="120"',
+                        'sec-ch-ua-mobile: ' . $secChMobile,
+                        'sec-ch-ua-platform: ' . $secChPlatform,
+                        'sec-fetch-dest: video',
+                        'sec-fetch-mode: no-cors',
+                        'sec-fetch-site: same-site',
+                        'DNT: 1',
+                        'Upgrade-Insecure-Requests: 1'
+                    ];
+                }
+                if (!empty($rangeOverride)) {
+                    $requestHeaders[] = 'Range: ' . $rangeOverride;
+                }
+
+                $responseHeaders = [];
+                $ch = curl_init();
                 curl_setopt_array($ch, [
-                    CURLOPT_SSL_VERIFYPEER => false,
-                    CURLOPT_SSL_VERIFYHOST => false,
-                    CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1_2,
+                    CURLOPT_URL => $targetUrl,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_MAXREDIRS => 5,
+                    CURLOPT_TIMEOUT => 45,
+                    CURLOPT_CONNECTTIMEOUT => 10,
+                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                    CURLOPT_USERAGENT => $ua,
+                    CURLOPT_HTTPHEADER => $requestHeaders,
+                    CURLOPT_HEADER => false,
+                    CURLOPT_NOBODY => false,
+                    CURLOPT_PROXY => '',
+                    CURLOPT_NOPROXY => '*',
+                    CURLOPT_COOKIEFILE => '',
+                    CURLOPT_COOKIEJAR => '',
+                    CURLOPT_HEADERFUNCTION => function ($ch, $headerLine) use (&$responseHeaders) {
+                        $len = strlen($headerLine);
+                        if (strpos($headerLine, ':') !== false) {
+                            [$key, $value] = explode(':', $headerLine, 2);
+                            $responseHeaders[trim($key)] = trim($value);
+                        }
+                        return $len;
+                    },
                 ]);
-            }
-
-            $response = curl_exec($ch);
-
-            if ($response === false) {
-                $error = curl_error($ch);
-                $errorCode = curl_errno($ch);
+                if (strpos($targetUrl, 'https://') === 0) {
+                    curl_setopt_array($ch, [
+                        CURLOPT_SSL_VERIFYPEER => false,
+                        CURLOPT_SSL_VERIFYHOST => false,
+                        CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1_2,
+                    ]);
+                }
+                $response = curl_exec($ch);
+                if ($response === false) {
+                    $error = curl_error($ch);
+                    $errorCode = curl_errno($ch);
+                    $info = curl_getinfo($ch);
+                    curl_close($ch);
+                    return [0, '', [], "cURL错误 [{$errorCode}]: {$error}", $info, $requestHeaders, $ua];
+                }
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $info = curl_getinfo($ch);
                 curl_close($ch);
+                return [$httpCode, $response, $responseHeaders, null, $info, $requestHeaders, $ua];
+            };
 
-                VideoLogUtils::warning("cURL错误 [{$errorCode}]: {$error}", 'videoProxy');
-                return response("请求失败: {$error}", 500);
+            if ($forceOkhttp) {
+                $ua = $okhttpUa;
+                $uaModeUsed = 'okhttp';
+            } elseif ($forceAndroid) {
+                $ua = $androidUa;
+                $uaModeUsed = 'android';
+            } else {
+                $ua = $clientUa ?: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36';
+                $uaModeUsed = '';
+            }
+            [$httpCode, $body, $responseHeaders, $err, $curlInfo, $requestHeaders, $usedUa] = $doRequest($ua, $rangeHeader, $uaModeUsed);
+
+            if ($httpCode >= 400 && !$forceAndroid && !$forceOkhttp) {
+                // 直连失败时自动降级为 Android UA 再试一次
+                [$httpCode, $body, $responseHeaders, $err, $curlInfo, $requestHeaders, $usedUa] = $doRequest($androidUa, $rangeHeader, 'android');
+                $forceAndroid = true;
             }
 
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $body = $response;
+            if ($httpCode >= 500 && !$noRange && !empty($rangeHeader)) {
+                // Range 可能触发源站限制，500 时退回无 Range 再试一次
+                [$httpCode, $body, $responseHeaders, $err, $curlInfo, $requestHeaders, $usedUa] = $doRequest($usedUa, null, $uaModeUsed);
+            }
 
-            curl_close($ch);
+            if ($httpCode >= 500 && !$forceOkhttp) {
+                // 仍然失败时，改用 okhttp UA + 无 Range 再试一次
+                $forceOkhttp = true;
+                $noRange = true;
+                $uaModeUsed = 'okhttp';
+                [$httpCode, $body, $responseHeaders, $err, $curlInfo, $requestHeaders, $usedUa] = $doRequest($okhttpUa, null, $uaModeUsed);
+            }
+
+            if ($httpCode === 0) {
+                VideoLogUtils::warning($err, 'videoProxy');
+            if ($debug === '1') {
+                $resp = [
+                    'target_url' => $targetUrl,
+                    'http_code' => 0,
+                    'error' => $err,
+                    'used_ua' => $usedUa,
+                    'force_android' => $forceAndroid,
+                    'force_okhttp' => $forceOkhttp,
+                    'range' => $rangeHeader,
+                    'norange' => $noRange,
+                    'ua_mode' => $uaMode,
+                    'ua_mode_used' => $uaModeUsed,
+                    'rewrite_m3u8' => $rewriteM3u8,
+                    'origin' => $origin,
+                    'referer' => $referer,
+                    'request_headers' => $requestHeaders,
+                    'curl_info' => $curlInfo,
+                    'resolved_ip' => gethostbyname($domain),
+                    ];
+                    return response(json_encode($resp, JSON_UNESCAPED_UNICODE), 200, [
+                        'Content-Type' => 'application/json; charset=utf-8',
+                        'Cache-Control' => 'no-cache',
+                    ]);
+                }
+                return response("请求失败: {$err}", 500);
+            }
 
             if ($httpCode >= 400) {
                 VideoLogUtils::warning("HTTP错误: {$httpCode}", 'videoProxy');
@@ -532,8 +617,8 @@ class IndexController
 
             $bodyModified = false;
             // **关键修复：处理M3U8文件中的相对路径**
-            if ($isM3U8) {
-                $body = $this->processM3U8Content($body, $targetUrl);
+            if ($isM3U8 && $rewriteM3u8) {
+                $body = $this->processM3U8Content($body, $targetUrl, $forceAndroid, $forceOkhttp, $noRange);
                 $bodyModified = true;
                 VideoLogUtils::info('已处理M3U8文件中的相对路径', 'videoProxy');
             }
@@ -542,6 +627,19 @@ class IndexController
                 $resp = [
                     'target_url' => $targetUrl,
                     'http_code' => $httpCode,
+                    'used_ua' => $usedUa,
+                    'force_android' => $forceAndroid,
+                    'force_okhttp' => $forceOkhttp,
+                    'range' => $rangeHeader,
+                    'norange' => $noRange,
+                    'ua_mode' => $uaMode,
+                    'ua_mode_used' => $uaModeUsed,
+                    'rewrite_m3u8' => $rewriteM3u8,
+                    'origin' => $origin,
+                    'referer' => $referer,
+                    'request_headers' => $requestHeaders,
+                    'curl_info' => $curlInfo,
+                    'resolved_ip' => gethostbyname($domain),
                     'content_type' => $contentType,
                     'content_length' => strlen($body),
                     'response_headers' => $responseHeaders,
@@ -585,7 +683,7 @@ class IndexController
     /**
      * 处理M3U8文件内容，将相对路径转换为代理路径
      */
-    private function processM3U8Content($content, $baseUrl)
+    private function processM3U8Content($content, $baseUrl, $forceAndroid = false, $forceOkhttp = false, $noRange = false)
     {
         if (empty($content)) {
             return $content;
@@ -607,6 +705,9 @@ class IndexController
 
         $lines = explode("\n", $content);
         $processedLines = [];
+
+        $uaParam = $forceAndroid ? '&ua=android' : ($forceOkhttp ? '&ua=okhttp' : '');
+        $rangeParam = $noRange ? '&norange=1' : '';
 
         foreach ($lines as $line) {
             $line = trim($line);
@@ -635,6 +736,19 @@ class IndexController
                 continue;
             }
 
+            // TS 直连：不走代理，确保是绝对 URL
+            if (preg_match('/\.ts(\?|$)/i', $line)) {
+                if (!preg_match('/^https?:\/\//', $line)) {
+                    if (strpos($line, '/') === 0) {
+                        $line = $baseScheme . '://' . $baseHost . $line;
+                    } else {
+                        $line = $baseUrlPrefix . '/' . ltrim($line, '/');
+                    }
+                }
+                $processedLines[] = $line;
+                continue;
+            }
+
             // 如果是相对路径，转换为通过代理的绝对路径
             if (!preg_match('/^https?:\/\//', $line)) {
                 // 构建完整的远程URL
@@ -647,13 +761,13 @@ class IndexController
                 }
 
                 // 转换为代理URL
-                $proxyUrl = '/index/vproxy?url=' . urlencode($fullUrl);
+                $proxyUrl = '/index/vproxy?url=' . urlencode($fullUrl) . $uaParam . $rangeParam;
                 $processedLines[] = $proxyUrl;
 
                 VideoLogUtils::info("转换路径: {$line} -> {$proxyUrl}", 'processM3U8');
             } else {
                 // 已经是绝对URL，也通过代理
-                $proxyUrl = '/index/vproxy?url=' . urlencode($line);
+                $proxyUrl = '/index/vproxy?url=' . urlencode($line) . $uaParam . $rangeParam;
                 $processedLines[] = $proxyUrl;
 
                 VideoLogUtils::info("代理绝对路径: {$line} -> {$proxyUrl}", 'processM3U8');
