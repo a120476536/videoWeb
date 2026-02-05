@@ -16,8 +16,9 @@
         .header {position: sticky; top:5px; z-index:1000; background:#fff; padding:15px 0; box-shadow:0 2px 10px rgba(0,0,0,0.1);}
         .header-container {max-width:1200px; margin:0 auto; display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:20px; padding:0 20px;}
         .logo {font-size:28px; font-weight:bold; color:#667eea; text-decoration:none;}
-        .nav-dropdown {display:flex; gap:15px; justify-content:center; flex:1; overflow:hidden;}
+        .nav-dropdown {display:flex; gap:15px; justify-content:center; flex:1; overflow:hidden; position:relative; z-index:1001;}
         .nav-item, .nav-dropdown-item {padding:8px 16px; border-radius:20px; text-decoration:none; font-size:14px; color:#333; transition:0.3s; white-space:nowrap;}
+        .nav-item {pointer-events:auto; cursor:pointer;}
         .nav-item.active, .nav-dropdown-item.active {background: linear-gradient(135deg,#667eea,#764ba2); color:#fff;}
         .search-box {position:relative; flex-shrink:0;}
         .search-input {width:250px; padding:10px 40px 10px 15px; border:2px solid #ccc; border-radius:25px; outline:none; transition:0.3s;}
@@ -71,7 +72,7 @@
             </div>
         </nav>
         <div class="search-box">
-            <form method="GET" action="/search">
+            <form method="GET" action="/index/search">
                 <input type="text" name="keyword" class="search-input" placeholder="搜索电影、电视剧..." value="{$currentKeyword|default=''}">
                 <button type="submit" class="search-btn">🔍</button>
             </form>
@@ -119,6 +120,14 @@
 
 <script src="/ads/ads.js"></script>
 <script>
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+        const href = item.getAttribute('href');
+        if (href) {
+            window.location.href = href;
+        }
+    });
+});
 function playVideo(vod_name){
     window.location.href = '/index/search?keyword='+encodeURIComponent(vod_name);
 }

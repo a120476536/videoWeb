@@ -1,13 +1,11 @@
 # 影视站 (video-web)
 
-基于 [webman](https://www.workerman.net/webman) + [Workerman](https://www.workerman.net) 的影视聚合站，支持多视频源/多渠道、搜索、HLS 播放与 M3U8 代理，带简单后台与广告位配置。
-
----
-### 基础效果演示
 ![首页](./videoWeb/main.png)
-![TAB](./videoWeb/tab.png)
-![TAB](./videoWeb/search.png)
-![TAB](./videoWeb/video.jpg)
+![分类](./videoWeb/nav.png)
+![搜索](./videoWeb/search.png)
+![播放](./videoWeb/video.png)
+
+基于 [webman](https://www.workerman.net/webman) + [Workerman](https://www.workerman.net) 的影视聚合站，支持多视频源/多渠道、搜索、HLS 播放与 M3U8 代理，带简单后台与广告位配置。
 ## 技术栈
 
 | 类型 | 技术 |
