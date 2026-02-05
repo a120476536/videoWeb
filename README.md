@@ -4,6 +4,10 @@
 ![分类](./videoWeb/nav.png)
 ![搜索](./videoWeb/search.png)
 ![播放](./videoWeb/video.png)
+![登录](./videoWeb/login.png)
+![后台](./videoWeb/admin_main.png)
+![广告](./videoWeb/admin_ads.png)
+![渠道](./videoWeb/admin_channels.png)
 
 基于 [webman](https://www.workerman.net/webman) + [Workerman](https://www.workerman.net) 的影视聚合站，支持多视频源/多渠道、搜索、HLS 播放与 M3U8 代理，带简单后台与广告位配置。
 ## 技术栈
