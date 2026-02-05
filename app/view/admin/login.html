@@ -3,61 +3,126 @@
 <head>
 <meta charset="UTF-8">
 <title>后台登录</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
+:root{
+    --bg:#f3f8f4;
+    --card:#ffffff;
+    --text:#0f172a;
+    --muted:#6b7280;
+    --green:#16a34a;
+    --green-2:#22c55e;
+    --line:#e5e7eb;
+    --shadow:0 18px 40px rgba(17,24,39,.12);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
 body {
-    font-family: "Microsoft YaHei", Arial, sans-serif;
-    background: #f0f2f5;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+    font-family: "PingFang SC","Noto Sans SC","Microsoft YaHei",Arial,sans-serif;
+    background:
+        radial-gradient(900px 600px at 10% -10%, #dff7e8 0%, transparent 60%),
+        radial-gradient(900px 600px at 110% -20%, #e1f3ff 0%, transparent 55%),
+        var(--bg);
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    color: var(--text);
+}
+.login-wrap{
+    width: min(420px, 92vw);
+}
+.brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:800;
+    letter-spacing:.4px;
+    margin-bottom:16px;
+}
+.brand .dot{
+    width:12px;height:12px;border-radius:50%;
+    background:linear-gradient(135deg,var(--green),var(--green-2));
+    box-shadow:0 6px 12px rgba(22,163,74,.35);
 }
 .login-box {
-    background: #fff;
-    padding: 40px 30px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    width: 320px;
+    background: var(--card);
+    padding: 28px 26px 24px;
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    border:1px solid var(--line);
 }
 .login-box h2 {
-    text-align: center;
-    margin-bottom: 25px;
+    font-size:20px;
+    margin-bottom: 16px;
+}
+.login-box .sub{
+    font-size:12px;color:var(--muted);margin-bottom:16px;
+}
+.field{
+    display:flex;flex-direction:column;gap:8px;margin-bottom:14px;
+}
+.field label{
+    font-size:12px;color:var(--muted);
 }
 .login-box input {
     width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border-radius: 4px;
-    border: 1px solid #ccc;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    outline:none;
+    transition:.2s;
+}
+.login-box input:focus{
+    border-color: var(--green);
+    box-shadow:0 0 0 3px rgba(34,197,94,.15);
 }
 .login-box button {
     width: 100%;
     padding: 10px;
-    margin-top: 15px;
-    background-color: #007bff;
+    margin-top: 6px;
+    background: linear-gradient(135deg,var(--green),var(--green-2));
     color: #fff;
     border: none;
-    border-radius: 4px;
+    border-radius: 10px;
     cursor: pointer;
+    font-weight:700;
 }
+.login-box button:hover{filter:brightness(1.02);}
 .login-box .error {
-    color: red;
+    color: #dc2626;
     text-align: center;
-    font-size: 14px;
+    font-size: 13px;
+    margin-bottom:10px;
+}
+.footer{
+    text-align:center;
+    font-size:12px;
+    color:#9ca3af;
+    margin-top:14px;
 }
 </style>
 </head>
 <body>
-<div class="login-box">
-    <h2>后台登录</h2>
-    <?php if(!empty($error)): ?>
-        <div class="error"><?= htmlspecialchars($error) ?></div>
-    <?php endif; ?>
-    <form method="post" action="/admin/login">
-        <input type="text" name="username" placeholder="账号" required>
-        <input type="password" name="password" placeholder="密码" required>
-        <button type="submit">登录</button>
-    </form>
+<div class="login-wrap">
+    <div class="brand"><span class="dot"></span>后台管理系统</div>
+    <div class="login-box">
+        <h2>管理员登录</h2>
+        <div class="sub">请使用管理员账号登录后台</div>
+        <?php if(!empty($error)): ?>
+            <div class="error"><?= htmlspecialchars($error) ?></div>
+        <?php endif; ?>
+        <form method="post" action="/admin/login">
+            <div class="field">
+                <label>账号</label>
+                <input type="text" name="username" placeholder="请输入账号" required>
+            </div>
+            <div class="field">
+                <label>密码</label>
+                <input type="password" name="password" placeholder="请输入密码" required>
+            </div>
+            <button type="submit">登录</button>
+        </form>
+    </div>
+    <div class="footer">© 2026 后台管理系统</div>
 </div>
 </body>
 </html>
