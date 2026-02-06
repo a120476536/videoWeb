@@ -93,9 +93,11 @@ function insertAd(containerId, content, label, options) {
     ensureAdStyles();
 
     if (!options.enabled) {
-        container.remove();
+        container.style.display = 'none';
+        container.innerHTML = '';
         return;
     }
+    container.style.display = '';
 
     if (!content || !content.trim()) {
         renderPlaceholder(container, label, options);

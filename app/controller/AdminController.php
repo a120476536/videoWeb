@@ -182,37 +182,37 @@ class AdminController
 
         $ads = [
             'top' => [
-                'enabled' => (bool)$request->post('top_enabled', false) || trim($top) !== '',
+                'enabled' => (bool)$request->post('top_enabled', false),
                 'content' => $top,
                 'width' => (int)$request->post('top_width', 0),
                 'height' => (int)$request->post('top_height', 90),
             ],
             'bottom' => [
-                'enabled' => (bool)$request->post('bottom_enabled', false) || trim($bottom) !== '',
+                'enabled' => (bool)$request->post('bottom_enabled', false),
                 'content' => $bottom,
                 'width' => (int)$request->post('bottom_width', 0),
                 'height' => (int)$request->post('bottom_height', 90),
             ],
             'left' => [
-                'enabled' => (bool)$request->post('left_enabled', false) || trim($left) !== '',
+                'enabled' => (bool)$request->post('left_enabled', false),
                 'content' => $left,
                 'width' => (int)$request->post('left_width', 120),
                 'height' => (int)$request->post('left_height', 260),
             ],
             'right' => [
-                'enabled' => (bool)$request->post('right_enabled', false) || trim($right) !== '',
+                'enabled' => (bool)$request->post('right_enabled', false),
                 'content' => $right,
                 'width' => (int)$request->post('right_width', 120),
                 'height' => (int)$request->post('right_height', 260),
             ],
             'video_top' => [
-                'enabled' => (bool)$request->post('video_top_enabled', false) || trim($video_top) !== '',
+                'enabled' => (bool)$request->post('video_top_enabled', false),
                 'content' => $video_top,
                 'width' => (int)$request->post('video_top_width', 0),
                 'height' => (int)$request->post('video_top_height', 80),
             ],
             'video_bottom' => [
-                'enabled' => (bool)$request->post('video_bottom_enabled', false) || trim($video_bottom) !== '',
+                'enabled' => (bool)$request->post('video_bottom_enabled', false),
                 'content' => $video_bottom,
                 'width' => (int)$request->post('video_bottom_width', 0),
                 'height' => (int)$request->post('video_bottom_height', 120),
