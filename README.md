@@ -145,7 +145,7 @@ php windows.php
 | 站点名 / Logo | `common/VideoUtils::systemName()`、`systemLogo()` | 直接改返回值 |
 | 渠道列表 | `common/VideoUtils::channels()` | 返回 JSON，可按需改为数据库或配置文件 |
 | 分类黑名单 | `common/VideoUtils::blacklist()` | 过滤 `getNav` 中的分类 |
-| 首页推荐 | `IndexController::mainReJson()` | 静态 JSON，可改为接口或数据库 |
+| 首页推荐 | `IndexController::mainReJson()` | 静态 JSON，可改为接口或数据库，目前没必要，自己维护一套首页json即可 |
 | 播放器顶部广告 | `IndexController::getPlayerAdConfig()` | `enabled` 控制显隐，`html` 为广告 HTML |
 | 整站广告位 | 后台「广告配置」→ `runtime/ads.json` | 顶部/底部/左右/播放器顶部/播放器底部 |
 | 后台账号 | `AdminController::$username`、`$password` | 建议改为配置或数据库 |
