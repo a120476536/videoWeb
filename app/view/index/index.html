@@ -19,7 +19,10 @@
         
         body {
             font-family: 'Microsoft YaHei', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background:
+                radial-gradient(900px 600px at 10% -10%, #dff7e8 0%, transparent 60%),
+                radial-gradient(900px 600px at 110% -20%, #e1f3ff 0%, transparent 55%),
+                #f3f8f4;
             min-height: 100vh;
             color: #333;
         }
@@ -51,7 +54,7 @@
         .logo {
             font-size: 28px;
             font-weight: bold;
-            color: #667eea;
+            color: #16a34a;
             text-decoration: none;
             transition: all 0.3s ease;
             white-space: nowrap;
@@ -61,7 +64,7 @@
 
         .logo:hover {
             transform: scale(1.05);
-            color: #764ba2;
+            color: #22c55e;
         }
 
         /* 导航容器 - 居中自适应 */
@@ -102,15 +105,15 @@
         }
 
         .nav-item:hover {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #16a34a, #22c55e);
             color: white;
             transform: translateY(-2px);
         }
 
         .nav-item.active {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #16a34a, #22c55e);
             color: white;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 12px rgba(34,197,94, 0.3);
         }
 
         /* 更多菜单 */
@@ -135,7 +138,7 @@
         }
 
         .nav-more-btn:hover {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #16a34a, #22c55e);
             color: white;
         }
 
@@ -174,7 +177,7 @@
         }
 
         .nav-dropdown-item:hover {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #16a34a, #22c55e);
             color: white;
         }
 
@@ -183,7 +186,7 @@
         }
 
         .nav-dropdown-item.active {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #16a34a, #22c55e);
             color: white;
         }
 
@@ -208,14 +211,14 @@
         }
 
         .search-input:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+            border-color: #16a34a;
+            box-shadow: 0 0 10px rgba(34,197,94, 0.3);
         }
 
         .search-btn {
             position: absolute;
             right: 8px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #16a34a, #22c55e);
             border: none;
             border-radius: 50%;
             width: 32px;
@@ -230,7 +233,7 @@
 
         .search-btn:hover {
             transform: scale(1.1);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 4px 12px rgba(34,197,94, 0.4);
         }
 
         /* 推荐区容器 */
@@ -281,7 +284,7 @@
 
         .vod-card:hover {
             transform: translateY(-8px);
-            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 8px 24px rgba(34,197,94, 0.3);
         }
 
         .vod-pic {
@@ -316,7 +319,7 @@
             position: absolute;
             top: 8px;
             right: 8px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #16a34a, #22c55e);
             color: #fff;
             padding: 4px 10px;
             font-size: 12px;
@@ -441,7 +444,7 @@
 
         .demo-title {
             font-size: 24px;
-            color: #667eea;
+            color: #16a34a;
             margin-bottom: 20px;
             text-align: center;
         }
@@ -459,7 +462,7 @@
 
         .feature-list li:before {
             content: "✅ ";
-            color: #667eea;
+            color: #16a34a;
             font-weight: bold;
         }
     </style>

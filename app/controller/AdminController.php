@@ -14,7 +14,7 @@ class AdminController
     // 登录页
     public function loginPage(Request $request)
     {
-        return view('admin/login');
+        return view('admin/login', ['theme' => $this->getTheme()]);
     }
 
     // 登录处理
@@ -73,6 +73,7 @@ class AdminController
             'currentChannel' => $currentChannel,
             'recentChannels' => $history,
             'searchHits' => $searchHits,
+            'theme' => $this->getTheme(),
         ]);
     }
 
@@ -85,7 +86,11 @@ class AdminController
             ? json_decode(file_get_contents($adsFile), true)
             : [];
         $ads = $this->normalizeAdsConfig($ads);
-        return view('admin/ads', ['ads' => $ads, 'currentPath' => $request->path()]);
+        return view('admin/ads', [
+            'ads' => $ads,
+            'currentPath' => $request->path(),
+            'theme' => $this->getTheme(),
+        ]);
     }
 
     // 渠道管理页
@@ -96,8 +101,23 @@ class AdminController
         $channels = $channelsData['list'] ?? [];
         return view('admin/channels', [
             'channels' => $channels,
-            'currentPath' => $request->path()
+            'currentPath' => $request->path(),
+            'theme' => $this->getTheme(),
         ]);
+    }
+
+    // 保存后台主题
+    public function saveTheme(Request $request)
+    {
+        $this->checkLogin($request);
+        $theme = trim((string)$request->post('theme', 'green'));
+        $allowed = ['green', 'winter', 'finance', 'tech'];
+        if (!in_array($theme, $allowed, true)) {
+            $theme = 'green';
+        }
+        $file = runtime_path() . '/admin_theme.json';
+        file_put_contents($file, json_encode(['theme' => $theme], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+        return redirect('/admin/dashboard');
     }
 
     // 保存渠道配置
@@ -279,5 +299,17 @@ class AdminController
             }
         }
         return $ads;
+    }
+
+    private function getTheme(): string
+    {
+        $file = runtime_path() . '/admin_theme.json';
+        if (is_file($file)) {
+            $data = json_decode(file_get_contents($file), true);
+            if (is_array($data) && !empty($data['theme'])) {
+                return (string)$data['theme'];
+            }
+        }
+        return 'green';
     }
 }

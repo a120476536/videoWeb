@@ -44,3 +44,5 @@ Route::get('/ads.json', [app\controller\IndexController::class, 'getAds']);
 
 // 登出
 Route::get('/admin/logout', [AdminController::class, 'logout']);
+// 主题切换
+Route::post('/admin/theme', [AdminController::class, 'saveTheme']);

@@ -29,20 +29,23 @@
 
         body {
             font-family: 'Microsoft YaHei', Arial, sans-serif;
-            background: #0f0f0f;
-            color: #fff;
+            background:
+                radial-gradient(900px 600px at 10% -10%, #dff7e8 0%, transparent 60%),
+                radial-gradient(900px 600px at 110% -20%, #e1f3ff 0%, transparent 55%),
+                #f3f8f4;
+            color: #0f172a;
             line-height: 1.6;
         }
 
         /* 头部样式 */
         .header {
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(255, 255, 255, 0.95);
             padding: 12px 0;
             position: sticky;
             top: 0;
             z-index: 1000;
             backdrop-filter: blur(10px);
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid #e5e7eb;
         }
 
         .header-container {
@@ -57,12 +60,12 @@
         .logo {
             font-size: 20px;
             font-weight: bold;
-            color: #ff6b6b;
+            color: #22c55e;
             text-decoration: none;
         }
 
         .back-btn {
-            background: #333;
+            background: linear-gradient(135deg, #16a34a, #22c55e);
             color: #fff;
             border: none;
             padding: 8px 16px;
@@ -72,7 +75,7 @@
         }
 
         .back-btn:hover {
-            background: #555;
+            background: #16a34a;
         }
 
         /* 主要内容区域 */
@@ -186,7 +189,7 @@
         .status-dot {
             width: 8px;
             height: 8px;
-            background: #ff6b6b;
+            background: #22c55e;
             border-radius: 50%;
             animation: pulse 1.5s infinite;
         }
@@ -236,7 +239,7 @@
             width: 40px;
             height: 40px;
             border: 3px solid rgba(255, 255, 255, 0.3);
-            border-top-color: #ff6b6b;
+            border-top-color: #22c55e;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -332,7 +335,7 @@
 
         .complete-icon {
             font-size: 48px;
-            color: #ff6b6b;
+            color: #22c55e;
             margin-bottom: 15px;
         }
 
@@ -352,7 +355,7 @@
         }
 
         .replay-btn {
-            background: #ff6b6b;
+            background: #22c55e;
             color: white;
             border: none;
             padding: 12px 30px;
@@ -363,7 +366,7 @@
         }
 
         .replay-btn:hover {
-            background: #ff5252;
+            background: #16a34a;
             transform: scale(1.05);
         }
 
@@ -388,7 +391,7 @@
         .autoplay-icon {
             font-size: 48px;
             margin-bottom: 20px;
-            color: #ff6b6b;
+            color: #22c55e;
         }
 
         .autoplay-title {
@@ -405,7 +408,7 @@
         }
 
         .autoplay-btn {
-            background: #ff6b6b;
+            background: #22c55e;
             color: white;
             border: none;
             padding: 12px 30px;
@@ -416,21 +419,22 @@
         }
 
         .autoplay-btn:hover {
-            background: #ff5252;
+            background: #16a34a;
         }
 
         /* 视频信息区域 */
         .video-info {
-            background: #1a1a1a;
+            background: #fff;
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 20px;
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
         }
 
         .video-title {
             font-size: 24px;
             margin-bottom: 10px;
-            color: #fff;
+            color: #0f172a;
         }
 
         .video-meta {
@@ -438,34 +442,35 @@
             flex-wrap: wrap;
             gap: 15px;
             margin-bottom: 15px;
-            color: #aaa;
+            color: #64748b;
             font-size: 14px;
         }
 
         .video-desc {
-            color: #ccc;
+            color: #475569;
             line-height: 1.6;
         }
 
         .video-info {
-            background: #1a1a1a;
+            background: #fff;
             padding: 20px;
             border-radius: 8px;
         }
 
         /* 选集区域 */
         .episode-section {
-            background: #1a1a1a;
+            background: #fff;
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 20px;
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
         }
 
         .section-title {
             font-size: 18px;
             margin-bottom: 15px;
             padding-bottom: 10px;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid #e5e7eb;
         }
 
         .episode-list {
@@ -478,8 +483,8 @@
         }
 
         .episode-btn {
-            background: #333;
-            color: #fff;
+            background: #e5e7eb;
+            color: #0f172a;
             border: none;
             padding: 8px 15px;
             border-radius: 4px;
@@ -490,11 +495,11 @@
         }
 
         .episode-btn:hover {
-            background: #555;
+            background: #cfead8;
         }
 
         .episode-btn.active {
-            background: #ff6b6b;
+            background: #22c55e;
             color: white;
         }
 
@@ -507,8 +512,8 @@
         }
 
         .source-btn {
-            background: #333;
-            color: #fff;
+            background: #e5e7eb;
+            color: #0f172a;
             border: none;
             padding: 8px 16px;
             border-radius: 4px;
@@ -517,19 +522,20 @@
         }
 
         .source-btn:hover {
-            background: #555;
+            background: #cfead8;
         }
 
         .source-btn.active {
-            background: #ff6b6b;
+            background: #22c55e;
             color: white;
         }
 
         /* 相关推荐 */
         .recommend-section {
-            background: #1a1a1a;
+            background: #fff;
             padding: 20px;
             border-radius: 8px;
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
         }
 
         .recommend-grid {

@@ -65,12 +65,16 @@ class IndexController
     public function search(Request $request)
     {
         $keyword = $request->get('keyword', '');
+        $systemName = VideoUtils::systemName();
+        $systemLogo = VideoUtils::systemLogo();
         $channelsJson = VideoUtils::channels(); // 获取渠道列表
         $channels = json_decode($channelsJson, true);
 
         return view('index/search', [
             'keyword'  => $keyword,
             'channels' => $channels['list'],
+            'systemName' => $systemName,
+            'systemLogo' => $systemLogo,
         ]);
     }
 
@@ -201,6 +205,8 @@ class IndexController
      */
     public function video(Request $request)
     {
+        $systemName = VideoUtils::systemName();
+        $systemLogo = VideoUtils::systemLogo();
         // 优先从POST参数获取完整视频数据
         $videoDataJson = $request->post('videoData');
         $channelName = $request->post('channelName', '');
@@ -238,7 +244,12 @@ class IndexController
                 'count' => count($playSources)
             ], 'play_source_parse');
             
-            return view('index/video', ['videoData' => $completeVideoData, 'playerAd' => $this->getPlayerAdConfig()]);
+            return view('index/video', [
+                'videoData' => $completeVideoData,
+                'playerAd' => $this->getPlayerAdConfig(),
+                'systemName' => $systemName,
+                'systemLogo' => $systemLogo,
+            ]);
         } else {
             // 兼容原有的GET参数方式
             $ids = $request->get('ids') ?: $request->get('vod_id');
@@ -250,7 +261,12 @@ class IndexController
                     'ids' => $ids,
                     'channel_url' => $channel_url
                 ], 'video_params_missing');
-                return view('index/video', ['videoData' => null, 'playerAd' => $this->getPlayerAdConfig()]);
+                return view('index/video', [
+                    'videoData' => null,
+                    'playerAd' => $this->getPlayerAdConfig(),
+                    'systemName' => $systemName,
+                    'systemLogo' => $systemLogo,
+                ]);
             }
 
             // 原有逻辑：重新请求数据
@@ -260,7 +276,12 @@ class IndexController
                     'message' => '获取视频详情失败',
                     'response' => $videoData
                 ], 'video_detail_failed');
-                return view('index/video', ['videoData' => null, 'playerAd' => $this->getPlayerAdConfig()]);
+                return view('index/video', [
+                    'videoData' => null,
+                    'playerAd' => $this->getPlayerAdConfig(),
+                    'systemName' => $systemName,
+                    'systemLogo' => $systemLogo,
+                ]);
             }
 
             $videoInfo = $videoData['list'][0];
@@ -280,7 +301,12 @@ class IndexController
                 'channel_url' => $channel_url
             ];
             
-            return view('index/video', ['videoData' => $completeVideoData, 'playerAd' => $this->getPlayerAdConfig()]);
+            return view('index/video', [
+                'videoData' => $completeVideoData,
+                'playerAd' => $this->getPlayerAdConfig(),
+                'systemName' => $systemName,
+                'systemLogo' => $systemLogo,
+            ]);
         }
     }
     // public function video()

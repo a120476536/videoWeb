@@ -15,12 +15,46 @@
     --line:#e5e7eb;
     --shadow:0 10px 30px rgba(17,24,39,.08);
 }
+body[data-theme="green"]{
+    --bg:#f3f8f4;
+    --card:#ffffff;
+    --text:#0f172a;
+    --muted:#6b7280;
+    --green:#16a34a;
+    --green-2:#22c55e;
+    --line:#e5e7eb;
+}
+body[data-theme="winter"]{
+    --bg:#f0f5ff;
+    --card:#ffffff;
+    --text:#0f172a;
+    --muted:#6b7280;
+    --green:#2563eb;
+    --green-2:#60a5fa;
+    --line:#dbeafe;
+}
+body[data-theme="finance"]{
+    --bg:#f7f5f0;
+    --card:#ffffff;
+    --text:#1f2937;
+    --muted:#6b7280;
+    --green:#d97706;
+    --green-2:#f59e0b;
+    --line:#e5e7eb;
+}
+body[data-theme="tech"]{
+    --bg:#f4f6ff;
+    --card:#ffffff;
+    --text:#0f172a;
+    --muted:#6b7280;
+    --green:#7c3aed;
+    --green-2:#a78bfa;
+    --line:#e5e7eb;
+}
 *{margin:0;padding:0;box-sizing:border-box;}
 body{
     font-family:"PingFang SC","Noto Sans SC","Microsoft YaHei",Arial,sans-serif;
-    background:radial-gradient(900px 600px at 10% -10%, #dff7e8 0%, transparent 60%),
-               radial-gradient(900px 600px at 110% -20%, #e1f3ff 0%, transparent 55%),
-               var(--bg);
+    background:var(--bg);
     color:var(--text);
 }
 .layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh;}
@@ -100,7 +134,7 @@ footer{text-align:center;color:#9ca3af;font-size:12px;margin-top:26px;}
 }
 </style>
 </head>
-<body>
+<body data-theme="<?= htmlspecialchars($theme ?? 'green') ?>">
 <div class="layout">
     <aside class="sidebar">
         <div class="brand">后台管理系统</div>
@@ -146,6 +180,24 @@ footer{text-align:center;color:#9ca3af;font-size:12px;margin-top:26px;}
                 <?php endif; ?>
                 <a href="/admin/channels">查看全部</a>
             </div> -->
+        </div>
+
+        <div class="page-title">
+            <h2>换肤</h2>
+            <span class="muted">立即切换后台风格</span>
+        </div>
+
+        <div class="list">
+            <h4>主题选择</h4>
+            <form method="post" action="/admin/theme" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+                <select name="theme" style="padding:8px 12px;border:1px solid var(--line);border-radius:10px;">
+                    <option value="green" <?= ($theme ?? 'green')==='green'?'selected':'' ?>>绿色清新风</option>
+                    <option value="winter" <?= ($theme ?? '')==='winter'?'selected':'' ?>>冬天清爽风</option>
+                    <option value="finance" <?= ($theme ?? '')==='finance'?'selected':'' ?>>金融风</option>
+                    <option value="tech" <?= ($theme ?? '')==='tech'?'selected':'' ?>>科技风</option>
+                </select>
+                <button class="btn" type="submit">应用主题</button>
+            </form>
         </div>
 
         <div class="page-title">
